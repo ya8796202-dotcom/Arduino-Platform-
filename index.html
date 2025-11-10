@@ -2,325 +2,103 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>🚗 محاكاة قيادة ثلاثية الأبعاد — HTML فقط</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🚗 قيادة من داخل السيارة</title>
   <style>
-    :root {
-      --primary:#0ea5e9; --accent:#22c55e; --bg:#0f172a; --card:#0b1220; --text:#e5e7eb;
+    body { margin:0; background:#111; overflow:hidden; }
+    canvas { display:block; width:100vw; height:100vh; }
+    #hud {
+      position:fixed; top:10px; left:10px; color:#fff; font-family:"Cairo",sans-serif;
+      background:rgba(0,0,0,0.5); padding:8px 12px; border-radius:8px;
     }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:"Cairo",system-ui}
-    #hud{
-      position:fixed; top:12px; right:12px; background:rgba(2,6,23,.6);
-      backdrop-filter:blur(6px); border:1px solid #1f2937; padding:10px 12px; border-radius:12px;
-      display:flex; gap:16px; font-weight:800; z-index:10
-    }
-    #panel{
-      position:fixed; left:12px; top:12px; background:rgba(2,6,23,.6);
-      border:1px solid #1f2937; padding:10px; border-radius:12px; z-index:10; min-width:260px
-    }
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .btn{padding:8px 10px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
-    .btn-primary{background:var(--primary);color:#071621}
-    .btn-accent{background:var(--accent);color:#071621}
-    .slider{width:100%}
-    #overlay{
-      position:fixed; inset:0; display:grid; place-items:center; z-index:20;
-      background:radial-gradient(1200px circle at center, rgba(14,165,233,0.1), transparent 50%);
-    }
-    .panel{
-      background:rgba(2,6,23,0.8); border:1px solid #1f2937; border-radius:16px; padding:18px; text-align:center; max-width:520px
-    }
-    .title{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:8px}
-    canvas{display:block; width:100vw; height:100vh}
   </style>
 </head>
 <body>
-<div id="hud">
-  <div>السرعة: <span id="speed">0</span> كم/س</div>
-  <div>RPM: <span id="rpm">0</span></div>
-  <div>Gear: <span id="gear">N</span></div>
-</div>
-
-<div id="panel">
-  <div style="font-weight:800;color:var(--primary);margin-bottom:6px">⚙️ إعدادات السيارة</div>
-  <div class="row">
-    <label style="flex:1">قوة المحرك <input id="eng" class="slider" type="range" min="2000" max="12000" step="500" value="7000"></label>
-    <label style="flex:1">جر الإطارات μ <input id="mu" class="slider" type="range" min="0.6" max="1.4" step="0.05" value="1.0"></label>
-    <label style="flex:1">فرامل <input id="brk" class="slider" type="range" min="4000" max="14000" step="500" value="9000"></label>
-  </div>
-  <div class="row" style="margin-top:8px">
-    <button class="btn btn-primary" id="resetBtn">إعادة الضبط</button>
-    <button class="btn btn-accent" id="toggleFPV">تبديل المنظور (داخلي/خارجي)</button>
-  </div>
-  <div style="font-size:12px;opacity:.8;margin-top:6px">
-    التحكم: W تسارع • S فرامل • A/D توجيه • Space فرامل يد • C تبديل المنظور • Shift غيار للأعلى • Ctrl غيار للأسفل
-  </div>
-</div>
-
-<div id="overlay">
-  <div class="panel">
-    <div class="title">محاكاة قيادة ثلاثية الأبعاد</div>
-    <div style="opacity:.85;margin-bottom:12px">اضغط "ابدأ" ثم استخدم لوحة المفاتيح للقيادة. المنظور الداخلي يظهر دركسيون يتحرك معك.</div>
-    <div class="row" style="justify-content:center">
-      <button class="btn btn-primary" id="startBtn">ابدأ</button>
-    </div>
-  </div>
-</div>
-
+<div id="hud">السرعة: <span id="speed">0</span> كم/س</div>
 <canvas id="scene"></canvas>
 
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const speedEl=document.getElementById("speed"), rpmEl=document.getElementById("rpm"), gearEl=document.getElementById("gear");
-const cv = document.getElementById("scene");
-const renderer = new THREE.WebGLRenderer({canvas: cv, antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+const speedEl=document.getElementById("speed");
+const cv=document.getElementById("scene");
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87c5ff);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x87c5ff);
 
-// Sky light and sun
-const hemi = new THREE.HemisphereLight(0xffffff, 0x447755, 0.6);
+// إضاءة
+const hemi=new THREE.HemisphereLight(0xffffff,0x444444,0.6);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+const sun=new THREE.DirectionalLight(0xffffff,0.9);
 sun.position.set(50,100,30);
-sun.castShadow = true;
-sun.shadow.mapSize.set(1024,1024);
+sun.castShadow=true;
 scene.add(sun);
 
-// Camera
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0, 3.5, 8);
+// كاميرا داخلية
+const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+camera.position.set(0,1.2,0.5); // مكان السائق
 scene.add(camera);
-const orbit = new THREE.OrbitControls(camera, renderer.domElement);
-orbit.target.set(0,1,0); orbit.update();
 
-// Ground (infinite road illusion)
-const groundGeo = new THREE.PlaneGeometry(500, 500);
-const groundMat = new THREE.MeshStandardMaterial({color:0x4a7a4a});
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-scene.add(ground);
+// أرضية وطريق
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({color:0x4a7a4a}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
 
-// Road strip
-const roadW=8, roadL=200;
-const roadGeo = new THREE.PlaneGeometry(roadW, roadL);
-const roadMat = new THREE.MeshStandardMaterial({color:0x333333});
-const road = new THREE.Mesh(roadGeo, roadMat);
-road.rotation.x = -Math.PI/2;
-road.position.z = -roadL/2 + 5;
-scene.add(road);
+const road=new THREE.Mesh(new THREE.PlaneGeometry(8,200),new THREE.MeshStandardMaterial({color:0x333333}));
+road.rotation.x=-Math.PI/2; road.position.z=-100; scene.add(road);
 
-// Lane lines
-function makeLine(zOffset){
-  const line = new THREE.Mesh(new THREE.PlaneGeometry(0.15, roadL), new THREE.MeshStandardMaterial({color:0xffffff}));
-  line.rotation.x = -Math.PI/2;
-  line.position.set(0,0.01,zOffset);
-  return line;
-}
-scene.add(makeLine(road.position.z));
-const sideLineL = new THREE.Mesh(new THREE.PlaneGeometry(0.2, roadL), new THREE.MeshStandardMaterial({color:0xffffff}));
-sideLineL.rotation.x = -Math.PI/2; sideLineL.position.set(-roadW/2+0.2, 0.01, road.position.z);
-const sideLineR = sideLineL.clone(); sideLineR.position.x = roadW/2-0.2;
-scene.add(sideLineL, sideLineR);
+// دركسيون
+const steering=new THREE.Mesh(new THREE.TorusGeometry(0.25,0.05,16,32),new THREE.MeshStandardMaterial({color:0x222222}));
+steering.position.set(0.3,0.9,0.8);
+scene.add(steering);
 
-// Car model (simple but clean)
-const carGroup = new THREE.Group(); scene.add(carGroup);
-// Body
-const body = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.6,4), new THREE.MeshStandardMaterial({color:0x0ea5e9, metalness:0.4, roughness:0.4}));
-body.castShadow = true; body.receiveShadow = true; carGroup.add(body);
-// Windows
-const glass = new THREE.Mesh(new THREE.BoxGeometry(1.6,0.4,1.6), new THREE.MeshPhysicalMaterial({color:0x66aacc, roughness:0, transmission:0.2, transparent:true, opacity:0.7}));
-glass.position.y = 0.5; glass.position.z = -0.5; carGroup.add(glass);
-// Wheels
-function wheel(){
-  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.25, 24), new THREE.MeshStandardMaterial({color:0x111111}));
-  t.rotation.z = Math.PI/2; t.castShadow = true; return t;
-}
-const wFL=wheel(), wFR=wheel(), wRL=wheel(), wRR=wheel();
-wFL.position.set(-0.9, -0.2, 1.5); wFR.position.set(0.9, -0.2, 1.5);
-wRL.position.set(-0.9, -0.2, -1.5); wRR.position.set(0.9, -0.2, -1.5);
-carGroup.add(wFL,wFR,wRL,wRR);
+// حالة السيارة
+const state={vx:0,vz:0,heading:0,steer:0};
 
-// Interior steering wheel (for FPV)
-const steering = new THREE.Mesh(new THREE.TorusGeometry(0.22,0.05,16,32), new THREE.MeshStandardMaterial({color:0x222222}));
-steering.position.set(0.3, 0.6, 0.8);
-carGroup.add(steering);
-
-// FPV camera mount
-const fpv = new THREE.Object3D();
-fpv.position.set(0, 0.7, 0.6); // driver's head position
-carGroup.add(fpv);
-
-// Position car
-carGroup.position.set(0,0.35, 2);
-
-// Physics state
-const state = {
-  vx:0, vz:0, // world velocities
-  heading:0,
-  steer:0,
-  gear:0, // 0=N, 1..5
-  engineForce: 7000,
-  brakeForce: 9000,
-  mu: 1.0,
-  ebrake: false
-};
-
-// Inputs
-const keys = {w:false,s:false,a:false,d:false,space:false,shift:false,ctrl:false};
-window.addEventListener("keydown", e=>{
-  const k = e.key.toLowerCase();
-  if(k==="w") keys.w=true;
-  if(k==="s") keys.s=true;
-  if(k==="a") keys.a=true;
-  if(k==="d") keys.d=true;
-  if(e.code==="Space") keys.space=true;
-  if(k==="shift") keys.shift=true;
-  if(k==="control") keys.ctrl=true;
-  if(k==="c"){ toggleView(); }
+// مدخلات
+const keys={w:false,s:false,a:false,d:false};
+window.addEventListener("keydown",e=>{
+  if(e.key==="w")keys.w=true;
+  if(e.key==="s")keys.s=true;
+  if(e.key==="a")keys.a=true;
+  if(e.key==="d")keys.d=true;
 });
-window.addEventListener("keyup", e=>{
-  const k = e.key.toLowerCase();
-  if(k==="w") keys.w=false;
-  if(k==="s") keys.s=false;
-  if(k==="a") keys.a=false;
-  if(k==="d") keys.d=false;
-  if(e.code==="Space") keys.space=false;
-  if(k==="shift") keys.shift=false;
-  if(k==="control") keys.ctrl=false;
+window.addEventListener("keyup",e=>{
+  if(e.key==="w")keys.w=false;
+  if(e.key==="s")keys.s=false;
+  if(e.key==="a")keys.a=false;
+  if(e.key==="d")keys.d=false;
 });
 
-// Basic drivetrain
-function setGear(delta){
-  state.gear = Math.max(0, Math.min(5, state.gear + delta));
-}
-
-// Physics step
-function clamp(v,min,max){return Math.max(min, Math.min(max, v));}
+// فيزياء مبسطة
 function step(dt){
-  // steering
-  const steerTarget = (keys.a?-0.5:0) + (keys.d?0.5:0);
-  state.steer += clamp(steerTarget - state.steer, -1.8*dt, 1.8*dt);
-
-  // gear
-  if(keys.shift){ setGear(1); keys.shift=false; }
-  if(keys.ctrl){ setGear(-1); keys.ctrl=false; }
-
-  // longitudinal
-  const forward = new THREE.Vector2(Math.sin(state.heading), Math.cos(state.heading)); // z forward
-  const vel = new THREE.Vector2(state.vx, state.vz);
-  const ux = vel.dot(forward); // forward component
-  const uy = vel.dot(new THREE.Vector2(forward.y, -forward.x)); // lateral component
-
-  const throttle = keys.w ? 1 : 0;
-  const brake = keys.s ? 1 : 0;
-  const ebr = keys.space ? 1 : 0;
-
-  const gearMul = state.gear===0?0 : 0.8 + 0.15*state.gear; // rough gear torque scaling
-  const F_engine = throttle * state.engineForce * gearMul;
-  const F_brake  = brake * state.brakeForce;
-  const F_drag   = 0.35 * ux*ux * Math.sign(ux); // air drag
-  const F_roll   = 40 * Math.sign(ux);           // rolling resistance
-  const Fx = F_engine - F_brake*Math.sign(ux) - F_drag - F_roll - ebr*state.brakeForce*0.3*Math.sign(ux);
-
-  // lateral grip
-  const F_lat_max = state.mu * 9.81 * 1200 * 0.7; // simple
-  let F_lat = -uy * 2500; // linear cornering stiffness
-  F_lat = clamp(F_lat, -F_lat_max*(1-0.5*ebr), F_lat_max*(1-0.5*ebr));
-
-  // accelerations in local frame
-  const ax = Fx / 1200 + uy * 0.0; // ignore yaw coupling for simplicity
-  const ay = F_lat / 1200;
-
-  // integrate local velocities
-  const ux2 = ux + ax*dt;
-  const uy2 = uy + ay*dt;
-
-  // back to world
-  const right = new THREE.Vector2(forward.y, -forward.x);
-  const worldVel = new THREE.Vector2().addScaledVector(forward, ux2).addScaledVector(right, uy2);
-  state.vx = worldVel.x; state.vz = worldVel.y;
-
-  // position
-  carGroup.position.x += state.vx*dt;
-  carGroup.position.z += state.vz*dt;
-
-  // heading/yaw from steering and forward speed
-  const yawRate = state.steer * clamp(ux2, -15, 15) * 0.08;
-  state.heading += yawRate*dt;
-  carGroup.rotation.y = state.heading;
-
-  // wheel visuals
-  wFL.rotation.y = state.steer; wFR.rotation.y = state.steer;
-  const wheelSpin = ux2 * 5;
-  [wFL,wFR,wRL,wRR].forEach(w=>w.rotation.x += wheelSpin*dt);
-
-  // HUD
-  const speedMS = Math.hypot(state.vx, state.vz);
-  speedEl.textContent = Math.round(speedMS*3.6);
-  rpmEl.textContent = Math.round(800 + throttle*3000 + speedMS*120);
-  gearEl.textContent = state.gear===0?'N':state.gear;
+  if(keys.w) state.vz-=20*dt;
+  if(keys.s) state.vz+=20*dt;
+  if(keys.a) state.steer=Math.max(state.steer-1*dt,-0.5);
+  if(keys.d) state.steer=Math.min(state.steer+1*dt,0.5);
+  state.heading+=state.steer*dt*2;
+  camera.position.z+=state.vz*dt;
+  camera.rotation.y=state.heading;
+  steering.rotation.z=state.steer*2; // حركة الدركسيون
+  const speed=Math.abs(state.vz*3.6);
+  speedEl.textContent=Math.round(speed);
 }
 
-// Camera views
-let fpvMode = false;
-function applyCamera(){
-  if(fpvMode){
-    orbit.enabled = false;
-    camera.position.copy(fpv.getWorldPosition(new THREE.Vector3()));
-    camera.rotation.copy(carGroup.rotation);
-    camera.translateZ(-0.1);
-    camera.translateY(0.15);
-  }else{
-    orbit.enabled = true;
-  }
-}
-function toggleView(){ fpvMode = !fpvMode; applyCamera(); }
-
-// Animate road for infinity feel
-function animateRoad(){
-  road.position.z = carGroup.position.z - roadL/2 + 5;
-  sideLineL.position.z = road.position.z;
-  sideLineR.position.z = road.position.z;
-}
-
-// UI bindings
-const overlay = document.getElementById("overlay");
-document.getElementById("startBtn").addEventListener("click", ()=> overlay.style.display="none");
-document.getElementById("toggleFPV").addEventListener("click", toggleView);
-document.getElementById("resetBtn").addEventListener("click", ()=>{
-  state.vx=0; state.vz=0; state.heading=0; state.steer=0;
-  carGroup.position.set(0,0.35,2); carGroup.rotation.y=0;
-});
-document.getElementById("eng").addEventListener("input", e=> state.engineForce=parseFloat(e.target.value));
-document.getElementById("mu").addEventListener("input", e=> state.mu=parseFloat(e.target.value));
-document.getElementById("brk").addEventListener("input", e=> state.brakeForce=parseFloat(e.target.value));
-
-// Gear quick defaults
-state.gear=1;
-
-// Loop
+// حلقة اللعبة
 let last=performance.now();
 function loop(ts){
-  const dt = Math.min(0.033, (ts-last)/1000); last=ts;
+  const dt=(ts-last)/1000; last=ts;
   step(dt);
-  animateRoad();
-  applyCamera();
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
 // Resize
-window.addEventListener("resize", ()=>{
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+window.addEventListener("resize",()=>{
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
 });
 </script>
 </body>
