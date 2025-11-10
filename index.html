@@ -51,14 +51,6 @@ const examples=[
   {title:"PWM LED", cmd:"اضبط سطوع الليد في البن 5 إلى 128 باستخدام PWM"},
   {title:"طباعة سيريال", cmd:"اطبع على السيريال: مرحباً ياسر"},
   {title:"شاشة LCD", cmd:"اطبع على شاشة LCD: أهلاً بالعالم"},
-  {title:"تأخير", cmd:"انتظر لمدة 3 ثواني"},
-  {title:"قراءة حساس حرارة", cmd:"اقرأ الحساس في A1 واطبع القيمة"},
-  {title:"تشغيل مروحة", cmd:"شغل المروحة في البن 6 بسرعة 255"},
-  {title:"إيقاف مروحة", cmd:"اقفل المروحة في البن 6"},
-  {title:"تشغيل محرك سيرفو متكرر", cmd:"حرك السيرفو في البن 9 إلى زاوية 0 ثم 180 كل ثانية"},
-  {title:"تشغيل 2 LED", cmd:"شغل الليد في البن 12 والليد في البن 13"},
-  {title:"قراءة حساس ضوء", cmd:"اقرأ الحساس في A2 واطبع القيمة"},
-  {title:"تشغيل بuzzer مع رسالة", cmd:"شغل الجرس في البن 8 لمدة ثانية واطبع على السيريال: جرس شغال"}
 ];
 
 examples.forEach(ex=>{
@@ -69,12 +61,39 @@ examples.forEach(ex=>{
   examplesEl.appendChild(div);
 });
 
-// تحويل مبسط (placeholder)
+// تحويل فعلي
+function parseIntent(text){
+  text=text.toLowerCase();
+  const intents=[];
+  const pinMatch=text.match(/البن\s*(\d+)/);
+  const pin=pinMatch?parseInt(pinMatch[1]):13;
+
+  if(text.includes("شغل") && text.includes("ليد")) intents.push(`digitalWrite(${pin}, HIGH);`);
+  if(text.includes("اقفل") && text.includes("ليد")) intents.push(`digitalWrite(${pin}, LOW);`);
+  if(text.includes("موتور") && text.includes("شغل")){
+    const spd=text.match(/سرعة\s*(\d+)/);
+    intents.push(`analogWrite(${pin}, ${spd?spd[1]:200});`);
+  }
+  if(text.includes("موتور") && text.includes("اقفل")) intents.push(`digitalWrite(${pin}, LOW);`);
+  if(text.includes("جرس")) intents.push(`digitalWrite(${pin}, HIGH); delay(1000); digitalWrite(${pin}, LOW);`);
+  if(text.includes("زر")) intents.push(`int btn=digitalRead(${pin}); Serial.println(btn);`);
+  if(text.includes("سيرفو")) intents.push(`#include <Servo.h>\nServo myServo;\nmyServo.attach(${pin});\nmyServo.write(90);`);
+  if(text.includes("pwm")||text.includes("سطوع")) intents.push(`analogWrite(${pin},128);`);
+  if(text.includes("اطبع")||text.includes("سيريال")) intents.push(`Serial.println("رسالة من السيريال");`);
+  if(text.includes("lcd")) intents.push(`#include <LiquidCrystal.h>\nLiquidCrystal lcd(12,11,5,4,3,2);\nlcd.begin(16,2);\nlcd.print("أهلاً بالعالم");`);
+
+  return intents;
+}
+
 document.getElementById("convert").onclick=()=>{
   const txt=arabicEl.value;
   if(!txt){codeEl.textContent="// اكتب أو اختر مثال";return;}
-  codeEl.textContent="// هنا يظهر الكود الناتج بناءً على الأمر: \n// "+txt;
+  const intents=parseIntent(txt);
+  let setup="void setup(){\n  pinMode(13,OUTPUT);\n  Serial.begin(9600);\n}\n";
+  let loop="void loop(){\n  "+intents.join("\n  ")+"\n}";
+  codeEl.textContent=setup+"\n\n"+loop;
 };
+
 document.getElementById("copy").onclick=()=>{
   navigator.clipboard.writeText(codeEl.textContent);
   alert("تم نسخ الكود");
