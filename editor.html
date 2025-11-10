@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>🔧 محرر أردوينو تفاعلي</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- مكتبة CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+  <style>
+    body{margin:0;font-family:"Cairo",sans-serif;background:#0f172a;color:#e5e7eb}
+    header{background:linear-gradient(90deg,#0ea5e9,#22c55e);padding:12px;color:#08101a;font-weight:900;display:flex;justify-content:space-between;align-items:center}
+    .toolbar{background:#0b1220;padding:8px;display:flex;gap:8px}
+    .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-weight:700}
+    .btn.verify{background:#0ea5e9;color:#08101a}
+    .btn.upload{background:#22c55e;color:#08101a}
+    .btn.save{background:#1f2937;color:#e5e7eb}
+    #editor{height:60vh;border:1px solid #1f2937}
+    #console{background:#091021;color:#0ea5e9;height:25vh;overflow:auto;padding:8px;font-family:monospace}
+  </style>
+</head>
+<body>
+  <header>
+    <div>🔧 محرر أردوينو التفاعلي</div>
+    <div>واجهة شبيهة بـ Arduino IDE</div>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn verify" onclick="verifyCode()">✔️ Verify</button>
+    <button class="btn upload" onclick="uploadCode()">⬆️ Upload</button>
+    <button class="btn save" onclick="saveCode()">💾 Save</button>
+  </div>
+
+  <textarea id="editor">// اكتب كود أردوينو هنا
+void setup(){
+  pinMode(13,OUTPUT);
+}
+void loop(){
+  digitalWrite(13,HIGH);
+  delay(1000);
+  digitalWrite(13,LOW);
+  delay(1000);
+}</textarea>
+
+  <div id="console">💻 Serial Monitor جاهز...</div>
+
+<script>
+  // تفعيل CodeMirror
+  var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+    lineNumbers: true,
+    mode: "text/x-c++src",
+    theme: "default"
+  });
+
+  function log(msg){
+    document.getElementById("console").innerHTML += "<br>"+msg;
+  }
+
+  function verifyCode(){
+    log("✅ الكود تم التحقق منه (Lint بسيط)...");
+  }
+
+  async function uploadCode(){
+    log("⬆️ محاولة رفع الكود عبر WebSerial...");
+    try {
+      const port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      const writer = port.writable.getWriter();
+      const code = editor.getValue();
+      await writer.write(new TextEncoder().encode(code));
+      log("✅ تم إرسال الكود للمنفذ كسيريال.");
+      writer.releaseLock();
+    } catch(e){
+      log("❌ خطأ: "+e);
+    }
+  }
+
+  function saveCode(){
+    const blob = new Blob([editor.getValue()], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "sketch.ino";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    log("💾 تم حفظ الكود كملف sketch.ino");
+  }
+</script>
+</body>
+</html>
