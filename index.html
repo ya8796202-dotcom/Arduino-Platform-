@@ -789,16 +789,173 @@ render(data);
 
 
 
-<!-- Smart Bot Tips: حاطة جاهزة تضاف للصفحة الرئيسية -->
-<div id="sbt-container" aria-live="polite">
-  <div class="sbt-header">
-    <div class="sbt-icon">🤖</div>
-    <div class="sbt-title">نصيحة من البوت</div>
-    <div class="sbt-status" id="sbt-status">جاهز</div>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Bot Tips — توليد نصائح ديناميكيًا</title>
+  <style>
+    /* بطاقة الحاطة */
+    #sbt-container {
+      position: fixed; bottom: 18px; right: 18px; max-width: 340px;
+      background: #161a2e; color: #e9ecff; border-radius: 14px;
+      border: 1px solid rgba(108,140,255,0.28); padding: 12px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35), inset 0 0 24px rgba(108,140,255,0.12);
+      font-family: "Cairo", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      animation: fadeInUp 500ms ease; z-index: 1000;
+    }
+    .sbt-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .sbt-icon { font-size: 22px; filter: drop-shadow(0 2px 6px rgba(57,217,138,0.35)); }
+    .sbt-title { font-weight: 700; font-size: 15px; letter-spacing: .25px; }
+    .sbt-status { margin-left: auto; font-size: 12px; color: #a7b0d8; }
+    .sbt-message {
+      margin: 6px 0 10px; font-size: 14px; line-height: 1.7; min-height: 52px;
+      background: rgba(108,140,255,0.12); border: 1px dashed rgba(108,140,255,0.35);
+      border-radius: 10px; padding: 10px;
+      transition: transform 200ms ease, background 200ms ease, border-color 200ms ease;
+    }
+    .sbt-message.bump { transform: translateY(-3px); }
+    .sbt-row { display: flex; gap: 8px; }
+    #sbt-btn {
+      flex: 1; background: #6c8cff; color: #fff; border: none;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 700;
+      letter-spacing: .3px; box-shadow: 0 8px 18px rgba(108,140,255,0.35);
+      transition: background 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+    }
+    #sbt-btn:hover { background: #4b6bea; transform: translateY(-1px); }
+    #sbt-btn:active { transform: translateY(0); box-shadow: 0 6px 14px rgba(108,140,255,0.3); }
+    .sbt-count {
+      flex: 0; min-width: 72px; text-align: center;
+      padding: 10px 12px; border-radius: 10px; font-weight: 700; font-size: 12px;
+      background: rgba(57,217,138,0.14); color: #39d98a; border: 1px solid rgba(57,217,138,0.35);
+    }
+    @keyframes fadeInUp { from {opacity:0; transform: translateY(18px);} to {opacity:1; transform: translateY(0);} }
+
+    /* تحسينات للشاشات الصغيرة */
+    @media (max-width: 420px) {
+      #sbt-container { right: 10px; left: 10px; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- الحاطة المدمجة -->
+  <div id="sbt-container" aria-live="polite">
+    <div class="sbt-header">
+      <div class="sbt-icon">🤖</div>
+      <div class="sbt-title">نصيحة من البوت</div>
+      <div class="sbt-status" id="sbt-status">جاهز</div>
+    </div>
+    <div class="sbt-message" id="sbt-box">مرحبًا! اضغط “نصيحة جديدة” لتوليد نصيحة ديناميكيًا.</div>
+    <div class="sbt-row">
+      <button id="sbt-btn" type="button">نصيحة جديدة</button>
+      <div class="sbt-count" id="sbt-count">0/0</div>
+    </div>
   </div>
-  <div class="sbt-message" id="sbt-tip-box">مرحبًا! جرب توصل LED بمقاومة 220Ω لحمايته.</div>
-  <div class="sbt-row">
-    <button id="sbt-new-tip-btn" type="button">نصيحة جديدة</button>
-    <div class="sbt-count" id="sbt-count">0/0</div>
-  </div>
-</div>
+
+  <script>
+    // قوائم بناء النصيحة
+    const intros = ["جرب","استخدم","تأكد","اختبر","راقب","ثبّت","نظّم","بسّط","قيّم","طوّر","وثّق","كرر","خطّط","قسّم","حلّل","حدّث","نظّف","بدّل","جمّع","راجع"];
+    const subjects = [
+      "LED بمقاومة 220Ω","الأزرار مع مقاومات Pull-up","Breadboard قبل اللحام",
+      "التغذية المناسبة 5V/3.3V","تأريض GND مشترك","المكتبة المناسبة للحساس",
+      "تنظيم الأسلاك لتفادي التماس","حماية العكس للملفات الحثية","محول مستوى لإشارات I2C/SPI",
+      "استخدام Serial.print للتتبع","حفظ البيانات في EEPROM","نموذج صغير للتجربة",
+      "فيوز حماية للتيار","مبدّل جهد للمحركات","قياس الاستهلاك بالملتيميتر",
+      "تثبيت العناصر ميكانيكيًا","مكتبة FastLED/NeoPixel","فلترة الإشارة بمكثّفات",
+      "حساب قيمة المقاومة بالمخططات","استخدام مشتت حرارة عند الحاجة"
+    ];
+    const contexts = [
+      "في مشاريع Arduino","مع الحساسات الرقمية","قبل التشغيل الأول","عند ظهور أخطاء عشوائية",
+      "لو الإشارة فيها ضوضاء","في الروبوتات المتحركة","مع الشاشات I2C","عند الاتصال بالإنترنت",
+      "في قراءة المستشعرات","لو الأداء بطئ","في حفظ السجلات","مع المحركات Servo/Stepper",
+      "في المشاريع التعليمية","لو الحرارة عالية","مع وحدات ESP8266/ESP32",
+      "عند استخدام بطاريات","لو حصل Reset مفاجئ","في معايرة القياس","لو بتبني نموذج MVP","عند اختبار الـ Serial"
+    ];
+    const specifics = [
+      "استبدل delay بـ millis لتبقى الاستجابة عالية",
+      "جرّب زمن Debounce للأزرار لتفادي التذبذب",
+      "قسّم المشروع لموديولات صغيرة واضحة",
+      "اكتب وظائف قصيرة بأسماء معبّرة",
+      "اختبر كل جزء مستقلًا قبل الدمج",
+      "سجّل النتائج في ملف أو صفحة",
+      "راجع وصلات الجهد والأرضي بدقة",
+      "استعمل مقاومات ملائمة للتيار",
+      "اربط الأرضي في نقطة واحدة لتقليل الضوضاء",
+      "امنع الرجوع العكسي للتيار باستخدام Diode",
+      "استخدم مشتت حرارة للمكونات الساخنة",
+      "رتّب الأسلاك بعيدًا عن مصادر الضوضاء",
+      "حدّث المكتبات لإصلاح الأخطاء والتحسين",
+      "راجع إعدادات الـ Serial والـ baud rate",
+      "استخدم خرائط الألوان بحذر في الإضاءة",
+      "تأكد من اتجاه الدايودات والمكثفات",
+      "استخدم غلاف حماية للدوائر في المشاريع النهائية",
+      "احفظ نسخة احتياطية من الاسكيتش باستمرار",
+      "فعّل Watchdog لمنع التعليق في الأنظمة الحرجة",
+      "استخدم متوسط قراءات لتقليل التذبذب"
+    ];
+
+    // قوالب صياغة لزيادة التنوع
+    const templates = [
+      (i,s,c,x) => `نصيحة سريعة: ${i} ${s} ${c} — ${x}.`,
+      (i,s,c,x) => `إجراء مقترح: ${i} ${s} ${c} — ${x}.`,
+      (i,s,c,x) => `للاحترافية: ${i} ${s} ${c} — ${x}.`,
+      (i,s,c,x) => `ركّز هنا: ${i} ${s} ${c} — ${x}.`,
+      (i,s,c,x) => `تفصيلة مهمة: ${i} ${s} ${c} — ${x}.`,
+      (i,s,c,x) => `لتحسين سريع: ${i} ${s} ${c} — ${x}.`
+    ];
+
+    // توليد مجموعة كبيرة من النصائح مرة واحدة
+    function buildTips() {
+      const tips = [];
+      for (let a = 0; a < intros.length; a++) {
+        for (let b = 0; b < subjects.length; b++) {
+          const intro = intros[a];
+          const subject = subjects[b];
+          const context = contexts[(a + b) % contexts.length];
+          const spec = specifics[(a * 2 + b) % specifics.length];
+          for (const tpl of templates) {
+            tips.push(tpl(intro, subject, context, spec));
+          }
+        }
+      }
+      // الناتج هنا يتخطى 6 * 20 * 20 = 2400 نصيحة
+      // للحفاظ على الأداء، نختار أول 800 فقط
+      return tips.slice(0, 800);
+    }
+
+    // عناصر الواجهة
+    const box = document.getElementById("sbt-box");
+    const btn = document.getElementById("sbt-btn");
+    const statusEl = document.getElementById("sbt-status");
+    const countEl = document.getElementById("sbt-count");
+
+    // بناء النصائح مرة واحدة
+    const TIPS = buildTips();
+
+    function randomTip() {
+      return TIPS[Math.floor(Math.random() * TIPS.length)];
+    }
+    function updateCount() {
+      countEl.textContent = `1/${TIPS.length}`;
+    }
+    function showTip() {
+      statusEl.textContent = "جارٍ التوليد…";
+      const tip = randomTip();
+      box.textContent = tip;
+      box.classList.add("bump");
+      setTimeout(() => box.classList.remove("bump"), 200);
+      statusEl.textContent = "جاهز";
+      updateCount();
+    }
+
+    // تفعيل بعد تحميل الصفحة
+    document.addEventListener("DOMContentLoaded", () => {
+      box.textContent = randomTip();
+      updateCount();
+      btn.addEventListener("click", showTip);
+    });
+  </script>
+</body>
+</html>
