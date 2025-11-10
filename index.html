@@ -2,367 +2,125 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>Neon Runner | لعبة نيون رانر</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🔥 لعبة حرب بسيطة</title>
   <style>
-    :root {
-      --primary: #0ea5e9;
-      --accent: #22c55e;
-      --danger: #ef4444;
-      --bg-dark: #0f172a;
-      --bg-light: #f8fafc;
-      --card-dark: #111827;
-      --text-dark: #e5e7eb;
-      --text-light: #0b1220;
-    }
-    * { box-sizing: border-box; user-select: none }
-    body {
-      margin: 0; font-family: "Cairo", sans-serif;
-      background: var(--bg-dark); color: var(--text-dark);
-      display: grid; grid-template-columns: 1fr 320px; min-height: 100vh;
-    }
-    .sidebar {
-      background: rgba(17,24,39,0.9); border-left: 1px solid #1f2937; padding: 16px;
-    }
-    .brand { font-weight: 800; letter-spacing: 1px; margin-bottom: 10px; color: var(--primary) }
-    .stat { background: #0b1220; border: 1px solid #1f2937; padding: 10px; border-radius: 10px; margin-bottom: 10px }
-    .btn { display: inline-block; padding: 10px 12px; border-radius: 10px; font-weight: 700; cursor: pointer; border: none }
-    .btn-primary { background: var(--primary); color: #08101a }
-    .btn-accent  { background: var(--accent); color: #08101a }
-    .btn-danger  { background: var(--danger); color: #fff }
-    .row { display: flex; gap: 8px; flex-wrap: wrap }
-    .toggle { margin-top: 10px; font-size: 14px; opacity: 0.8; cursor: pointer }
-
-    /* Game area */
-    .game-wrap { position: relative; overflow: hidden }
-    canvas { width: 100%; height: 100vh; display: block; background: radial-gradient(circle at 30% 20%, #172554, #0b1220 60%, #020617) }
-    .hud {
-      position: absolute; top: 12px; right: 12px; background: rgba(2,6,23,0.6);
-      backdrop-filter: blur(6px); border: 1px solid #1f2937; color: #e5e7eb;
-      padding: 8px 10px; border-radius: 10px; display: flex; gap: 12px; font-weight: 700
-    }
-    .overlay {
-      position: absolute; inset: 0; display: grid; place-items: center;
-      background: radial-gradient(1200px circle at center, rgba(14,165,233,0.12), transparent 50%);
-      pointer-events: none;
-    }
-    .panel {
-      pointer-events: auto; background: rgba(2,6,23,0.8); border: 1px solid #1f2937; border-radius: 16px;
-      padding: 20px; max-width: 520px; text-align: center; color: #e5e7eb;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5)
-    }
-    .title { font-size: 26px; font-weight: 800; margin: 6px 0 12px; color: var(--primary) }
-    .subtitle { font-size: 14px; opacity: 0.8; margin-bottom: 12px }
-
-    /* Light theme toggle */
-    .light body { background: var(--bg-light); color: var(--text-light) }
-    .light .sidebar { background: #ffffff; border-left: 1px solid #e5e7eb }
-    .light .stat { background: #ffffff; border: 1px solid #e5e7eb }
-    .light canvas { background: linear-gradient(180deg, #eef2ff, #e2e8f0) }
-    .light .panel { background: #ffffff; border-color: #e5e7eb; color: #0b1220 }
+    body { margin:0; background:#111; overflow:hidden; }
+    canvas { display:block; margin:0 auto; background:#222; }
   </style>
 </head>
 <body>
-  <div class="game-wrap">
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <div>النقاط: <span id="score">0</span></div>
-      <div>المضاعِف: <span id="mult">x1.0</span></div>
-      <div>المستوى: <span id="level">1</span></div>
-    </div>
+<canvas id="game" width="800" height="500"></canvas>
 
-    <!-- Start panel -->
-    <div class="overlay" id="startOverlay">
-      <div class="panel">
-        <div class="title">Neon Runner</div>
-        <div class="subtitle">اضغط مسافة أو انقر للبدء. اقفز وتفادى العقبات. كلما استمريت زادت النقاط والمستوى!</div>
-        <div class="row">
-          <button class="btn btn-primary" id="startBtn">ابدأ اللعب</button>
-          <button class="btn btn-accent" id="howBtn">طريقة اللعب</button>
-        </div>
-      </div>
-    </div>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-    <!-- Game over panel -->
-    <div class="overlay" id="overOverlay" style="display:none">
-      <div class="panel">
-        <div class="title">انتهت الجولة</div>
-        <div class="subtitle">نقاطك: <span id="finalScore">0</span> • أعلى نتيجة: <span id="bestScore">0</span></div>
-        <div id="rankInfo" class="subtitle"></div>
-        <div class="row">
-          <button class="btn btn-primary" id="retryBtn">إعادة</button>
-          <button class="btn btn-danger" id="clearBtn">مسح السجل</button>
-        </div>
-      </div>
-    </div>
-  </div>
+let player = { x: 50, y: 220, w: 40, h: 40, color: "cyan" };
+let bullets = [];
+let enemies = [];
+let score = 0;
+let gameOver = false;
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="brand">⚡ Neon Runner</div>
-    <div class="stat">
-      <div><strong>أعلى نتيجة:</strong> <span id="hi">0</span></div>
-      <div><strong>عدد الجولات:</strong> <span id="sessions">0</span></div>
-      <div><strong>متوسط النقاط:</strong> <span id="avg">0</span></div>
-    </div>
-    <div class="stat">
-      <div><strong>لوحة الترتيب المحلية</strong></div>
-      <div id="board"></div>
-    </div>
-    <div class="row">
-      <button class="btn btn-accent" id="themeBtn">تبديل الثيم</button>
-      <button class="btn btn-primary" id="muteBtn">كتم/تشغيل الصوت</button>
-    </div>
-    <div class="toggle">أزرار: مسافة/سهم أعلى للقفز • حرف P للإيقاف المؤقت</div>
-  </aside>
+// رسم اللاعب
+function drawPlayer() {
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+}
 
-  <script>
-    // Basic game setup
-    const cv = document.getElementById("game");
-    const ctx = cv.getContext("2d");
-    let W, H;
-    function resize() { W = cv.width = cv.clientWidth; H = cv.height = cv.clientHeight; }
-    window.addEventListener("resize", resize); resize();
+// رسم الرصاص
+function drawBullets() {
+  ctx.fillStyle = "yellow";
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+}
 
-    // UI refs
-    const scoreEl = document.getElementById("score");
-    const multEl  = document.getElementById("mult");
-    const levelEl = document.getElementById("level");
-    const startOverlay = document.getElementById("startOverlay");
-    const overOverlay  = document.getElementById("overOverlay");
-    const finalScoreEl = document.getElementById("finalScore");
-    const bestScoreEl  = document.getElementById("bestScore");
-    const rankInfoEl   = document.getElementById("rankInfo");
-    const hiEl   = document.getElementById("hi");
-    const sessionsEl = document.getElementById("sessions");
-    const avgEl  = document.getElementById("avg");
-    const boardEl = document.getElementById("board");
+// رسم الأعداء
+function drawEnemies() {
+  ctx.fillStyle = "red";
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
+}
 
-    // Sound (optional simple oscillator)
-    let soundOn = true;
-    const beep = (freq=440, dur=0.05) => {
-      if (!soundOn) return;
-      const ac = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ac.createOscillator();
-      const g = ac.createGain();
-      o.connect(g); g.connect(ac.destination);
-      o.frequency.value = freq; o.type = "sawtooth";
-      g.gain.value = 0.02;
-      o.start();
-      setTimeout(()=>{ o.stop(); ac.close(); }, dur*1000);
-    };
+// تحديث الرصاص
+function updateBullets() {
+  bullets.forEach((b,i) => {
+    b.x += 8;
+    if (b.x > canvas.width) bullets.splice(i,1);
+  });
+}
 
-    // Game state
-    const g = {
-      running: false,
-      paused: false,
-      score: 0,
-      mult: 1,
-      level: 1,
-      speed: 4,
-      gravity: 0.8,
-      ground: 0.82,
-      player: { x: 0.2, y: 0.82, vy: 0, size: 24 },
-      obstacles: [],
-      particles: []
-    };
+// تحديث الأعداء
+function updateEnemies() {
+  enemies.forEach((e,i) => {
+    e.x -= 3;
+    if (e.x < 0) enemies.splice(i,1);
 
-    // Utility: convert normalized to pixels
-    const NX = (nx) => nx * W;
-    const NY = (ny) => ny * H;
-
-    // Start game
-    function startGame() {
-      g.running = true; g.paused = false;
-      g.score = 0; g.mult = 1; g.level = 1; g.speed = 4;
-      g.player = { x: 0.18, y: g.ground, vy: 0, size: 26 };
-      g.obstacles = []; g.particles = [];
-      startOverlay.style.display = "none";
-      overOverlay.style.display = "none";
-      beep(660, 0.08);
+    // تصادم مع اللاعب
+    if (e.x < player.x+player.w && e.x+e.w > player.x &&
+        e.y < player.y+player.h && e.y+e.h > player.y) {
+      gameOver = true;
     }
+  });
+}
 
-    // End game
-    function endGame() {
-      g.running = false;
-      overOverlay.style.display = "grid";
-      finalScoreEl.textContent = Math.floor(g.score);
-      const best = updateStats(Math.floor(g.score));
-      bestScoreEl.textContent = best.best;
-      rankInfoEl.textContent = best.rankText;
-      beep(220, 0.12);
-    }
-
-    // Jump
-    function jump() {
-      if (!g.running || g.paused) return;
-      if (Math.abs(g.player.y - g.ground) < 0.001) {
-        g.player.vy = -0.022 * H;
-        beep(880, 0.06);
+// تصادم الرصاص مع الأعداء
+function checkCollisions() {
+  bullets.forEach((b,bi) => {
+    enemies.forEach((e,ei) => {
+      if (b.x < e.x+e.w && b.x+b.w > e.x &&
+          b.y < e.y+e.h && b.y+b.h > e.y) {
+        bullets.splice(bi,1);
+        enemies.splice(ei,1);
+        score += 10;
       }
-    }
-
-    // Pause
-    function togglePause() {
-      if (!g.running) return;
-      g.paused = !g.paused;
-    }
-
-    // Input
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); g.running ? jump() : startGame(); }
-      if (e.key.toLowerCase() === "p") togglePause();
     });
-    cv.addEventListener("click", () => g.running ? jump() : startGame());
-    document.getElementById("startBtn").addEventListener("click", startGame);
-    document.getElementById("howBtn").addEventListener("click", ()=>alert("اقفز وتفادى العقبات. كلما طال بقاءك حيًا زاد المضاعِف والمستوى. مسافة/سهم أعلى للقفز، P للإيقاف المؤقت."));
-    document.getElementById("retryBtn").addEventListener("click", startGame);
-    document.getElementById("clearBtn").addEventListener("click", () => { localStorage.removeItem("neon_stats"); renderStats(); alert("تم مسح السجل"); });
-    document.getElementById("themeBtn").addEventListener("click", () => document.documentElement.classList.toggle("light"));
-    document.getElementById("muteBtn").addEventListener("click", () => { soundOn = !soundOn; alert(soundOn ? "الصوت: تشغيل" : "الصوت: كتم") });
+  });
+}
 
-    // Stats using localStorage
-    function getStats() {
-      return JSON.parse(localStorage.getItem("neon_stats") || '{"best":0,"runs":0,"sum":0,"board":[]}');
-    }
-    function saveStats(s) { localStorage.setItem("neon_stats", JSON.stringify(s)); }
-    function updateStats(score) {
-      const s = getStats();
-      s.runs += 1; s.sum += score;
-      s.best = Math.max(s.best, score);
-      s.board.push({ score, date: Date.now() });
-      s.board = s.board.sort((a,b)=>b.score-a.score).slice(0, 10);
-      saveStats(s);
-      renderStats();
-      const pos = s.board.findIndex(b => b.score === score);
-      const rankText = pos >= 0 ? `ترتيبك في اللوحة: #${pos+1}` : "";
-      return { best: s.best, rankText };
-    }
-    function renderStats() {
-      const s = getStats();
-      hiEl.textContent = s.best;
-      sessionsEl.textContent = s.runs;
-      avgEl.textContent = s.runs ? Math.floor(s.sum / s.runs) : 0;
-      boardEl.innerHTML = s.board.map((b,i)=>`#${i+1} • ${b.score} نقطة • ${new Date(b.date).toLocaleString('ar-EG')}`).join("<br>");
-    }
-    renderStats();
+// رسم النص
+function drawText() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("النقاط: " + score, 10, 20);
+  if (gameOver) {
+    ctx.fillStyle = "red";
+    ctx.font = "40px Arial";
+    ctx.fillText("انتهت اللعبة!", canvas.width/2-100, canvas.height/2);
+  }
+}
 
-    // Spawn obstacle
-    function spawnObstacle() {
-      const h = NY(0.06 + Math.random()*0.1);
-      const w = NX(0.02 + Math.random()*0.04);
-      const y = NY(g.ground) - h;
-      g.obstacles.push({ x: W + w, y, w, h, glow: `hsl(${Math.random()*360},80%,60%)` });
-    }
+// حلقة اللعبة
+function loop() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if (!gameOver) {
+    drawPlayer();
+    drawBullets();
+    drawEnemies();
+    updateBullets();
+    updateEnemies();
+    checkCollisions();
+    drawText();
+  } else {
+    drawText();
+  }
+  requestAnimationFrame(loop);
+}
+loop();
 
-    // Particles on hit
-    function explode(x, y, color="#ef4444") {
-      for (let i=0;i<24;i++) {
-        g.particles.push({
-          x, y,
-          vx: (Math.random()*2-1)*6,
-          vy: (Math.random()*2-1)*6,
-          life: 40,
-          color
-        });
-      }
-    }
+// تحكم اللاعب
+window.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") player.y -= 20;
+  if (e.key === "ArrowDown") player.y += 20;
+  if (e.key === " ") {
+    bullets.push({ x: player.x+player.w, y: player.y+player.h/2-5, w: 10, h: 5 });
+  }
+});
 
-    // Game loop
-    let last = performance.now(), spawnTimer = 0;
-    function loop(ts) {
-      requestAnimationFrame(loop);
-      const dt = ts - last; last = ts;
-      ctx.clearRect(0,0,W,H);
-
-      // Background grid glow
-      for (let i=0;i<16;i++){
-        ctx.fillStyle = `rgba(14,165,233,${0.03+(i%2)*0.02})`;
-        ctx.fillRect((i*W/16), 0, 2, H);
-      }
-
-      if (!g.running || g.paused) {
-        // draw player idle
-        drawPlayer();
-        drawGround();
-        return;
-      }
-
-      // Difficulty scaling
-      g.score += (dt * 0.02) * g.mult;
-      if (g.score > 250 && g.level < 2) { g.level=2; g.speed+=1; }
-      if (g.score > 600 && g.level < 3) { g.level=3; g.speed+=1; g.mult += 0.2; }
-      if (g.score > 1200 && g.level < 4) { g.level=4; g.speed+=1; g.mult += 0.3; }
-      scoreEl.textContent = Math.floor(g.score);
-      multEl.textContent  = "x" + g.mult.toFixed(1);
-      levelEl.textContent = g.level;
-
-      // Player physics
-      g.player.vy += g.gravity;
-      g.player.y += g.player.vy / H;
-      if (g.player.y > g.ground) { g.player.y = g.ground; g.player.vy = 0; }
-
-      // Spawn obstacles
-      spawnTimer += dt;
-      const interval = 900 - g.level*120;
-      if (spawnTimer > interval) { spawnTimer = 0; spawnObstacle(); }
-
-      // Move and draw obstacles
-      for (let i= g.obstacles.length-1; i>=0; i--) {
-        const o = g.obstacles[i];
-        o.x -= g.speed*3;
-        drawObstacle(o);
-        if (o.x + o.w < 0) g.obstacles.splice(i,1);
-      }
-
-      // Collision
-      for (const o of g.obstacles) {
-        const px = NX(g.player.x), py = NY(g.player.y);
-        const ps = g.player.size;
-        if (px+ps > o.x && px < o.x+o.w && py+ps > o.y && py < o.y+o.h) {
-          explode(px+ps/2, py+ps/2, o.glow);
-          endGame();
-        }
-      }
-
-      // Particles
-      for (let i=g.particles.length-1;i>=0;i--){
-        const p = g.particles[i];
-        p.x += p.vx; p.y += p.vy; p.life -= 1;
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = Math.max(p.life/40, 0);
-        ctx.fillRect(p.x, p.y, 3, 3);
-        ctx.globalAlpha = 1;
-        if (p.life <= 0) g.particles.splice(i,1);
-      }
-
-      drawPlayer();
-      drawGround();
-    }
-    requestAnimationFrame(loop);
-
-    // Drawing helpers
-    function drawPlayer() {
-      const x = NX(g.player.x), y = NY(g.player.y), s = g.player.size;
-      const grd = ctx.createLinearGradient(x, y, x+s, y+s);
-      grd.addColorStop(0, "#3b82f6"); grd.addColorStop(1, "#06b6d4");
-      ctx.fillStyle = grd;
-      ctx.shadowColor = "rgba(59,130,246,0.8)";
-      ctx.shadowBlur = 12;
-      ctx.fillRect(x, y, s, s);
-      ctx.shadowBlur = 0;
-    }
-    function drawObstacle(o) {
-      ctx.fillStyle = o.glow;
-      ctx.shadowColor = o.glow; ctx.shadowBlur = 16;
-      ctx.fillRect(o.x, o.y, o.w, o.h);
-      ctx.shadowBlur = 0;
-    }
-    function drawGround() {
-      const gy = NY(g.ground)+2;
-      ctx.fillStyle = "rgba(14,165,233,0.35)";
-      ctx.fillRect(0, gy, W, 3);
-    }
-  </script>
+// توليد أعداء
+setInterval(() => {
+  if (!gameOver) {
+    let y = Math.random() * (canvas.height-40);
+    enemies.push({ x: canvas.width-40, y, w: 40, h: 40 });
+  }
+}, 1500);
+</script>
 </body>
 </html>
