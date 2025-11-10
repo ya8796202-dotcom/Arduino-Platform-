@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>🔧 محرر أردوينو تفاعلي</title>
+  <title>🔧 محرر أردوينو التفاعلي</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- مكتبة CodeMirror -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -11,13 +11,14 @@
   <style>
     body{margin:0;font-family:"Cairo",sans-serif;background:#0f172a;color:#e5e7eb}
     header{background:linear-gradient(90deg,#0ea5e9,#22c55e);padding:12px;color:#08101a;font-weight:900;display:flex;justify-content:space-between;align-items:center}
-    .toolbar{background:#0b1220;padding:8px;display:flex;gap:8px}
+    .toolbar{background:#0b1220;padding:8px;display:flex;gap:8px;flex-wrap:wrap}
     .btn{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;font-weight:700}
     .btn.verify{background:#0ea5e9;color:#08101a}
     .btn.upload{background:#22c55e;color:#08101a}
     .btn.save{background:#1f2937;color:#e5e7eb}
-    #editor{height:60vh;border:1px solid #1f2937}
-    #console{background:#091021;color:#0ea5e9;height:25vh;overflow:auto;padding:8px;font-family:monospace}
+    #editor{height:50vh;border:1px solid #1f2937}
+    #console{background:#091021;color:#0ea5e9;height:20vh;overflow:auto;padding:8px;font-family:monospace}
+    #errors{padding:8px;font-weight:bold}
   </style>
 </head>
 <body>
@@ -29,10 +30,13 @@
   <div class="toolbar">
     <button class="btn verify" onclick="verifyCode()">✔️ Verify</button>
     <button class="btn upload" onclick="uploadCode()">⬆️ Upload</button>
+    <button class="btn upload" onclick="openSerial()">🔌 فتح المنفذ</button>
+    <button class="btn upload" onclick="sendSerial()">➡️ إرسال للأردوينو</button>
     <button class="btn save" onclick="saveCode()">💾 Save</button>
+    <input id="serialInput" placeholder="اكتب أمر وأرسله للـ Arduino" style="flex:1;padding:6px;border-radius:6px;border:none">
   </div>
 
-  <textarea id="editor">// اكتب كود أردوينو هنا
+  <textarea id="editor">// مثال كود أردوينو
 void setup(){
   pinMode(13,OUTPUT);
 }
@@ -43,57 +47,10 @@ void loop(){
   delay(1000);
 }</textarea>
 
+  <div id="errors"></div>
   <div id="console">💻 Serial Monitor جاهز...</div>
-<div class="toolbar">
-  <button class="btn accent" onclick="openSerial()">🔌 فتح المنفذ</button>
-  <button class="btn muted" onclick="closeSerial()">❌ إغلاق المنفذ</button>
-  <input id="serialInput" placeholder="اكتب أمر وأرسله للـ Arduino" style="flex:1;padding:6px;border-radius:6px;border:none">
-  <button class="btn upload" onclick="sendSerial()">➡️ إرسال</button>
-</div>
 
 <script>
-  let port, reader, inputDone, outputDone, inputStream, outputStream;
-
-async function openSerial(){
-  try {
-    port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 9600 });
-    log("✅ تم فتح المنفذ");
-    listenToPort();
-  } catch(e){
-    log("❌ خطأ في فتح المنفذ: "+e);
-  }
-}
-
-async function listenToPort(){
-  const decoder = new TextDecoderStream();
-  inputDone = port.readable.pipeTo(decoder.writable);
-  inputStream = decoder.readable;
-  reader = inputStream.getReader();
-
-  while(true){
-    const { value, done } = await reader.read();
-    if(done) break;
-    if(value) log("📥 "+value);
-  }
-}
-
-async function sendSerial(){
-  if(!port) { log("⚠️ افتح المنفذ أولاً"); return; }
-  const text = document.getElementById("serialInput").value;
-  const encoder = new TextEncoder();
-  const writer = port.writable.getWriter();
-  await writer.write(encoder.encode(text+"\n"));
-  writer.releaseLock();
-  log("➡️ أُرسل: "+text);
-}
-
-async function closeSerial(){
-  if(reader){ await reader.cancel(); await inputDone.catch(()=>{}); reader=null; }
-  if(port){ await port.close(); port=null; }
-  log("❌ تم إغلاق المنفذ");
-}
-
   // تفعيل CodeMirror
   var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
     lineNumbers: true,
@@ -101,27 +58,73 @@ async function closeSerial(){
     theme: "default"
   });
 
-  function log(msg){
-    document.getElementById("console").innerHTML += "<br>"+msg;
+  function log(msg,color="inherit"){
+    const c = document.getElementById("console");
+    c.innerHTML += `<div style="color:${color}">${msg}</div>`;
+    c.scrollTop = c.scrollHeight;
   }
 
+  // فحص وتحليل متقدم للكود
   function verifyCode(){
-    log("✅ الكود تم التحقق منه (Lint بسيط)...");
+    const code = editor.getValue();
+    let errors = [];
+
+    if(!code.includes("void setup")) errors.push("❌ الكود لا يحتوي على دالة setup()");
+    if(!code.includes("void loop")) errors.push("❌ الكود لا يحتوي على دالة loop()");
+
+    let openBraces = (code.match(/{/g)||[]).length;
+    let closeBraces = (code.match(/}/g)||[]).length;
+    if(openBraces !== closeBraces) errors.push("❌ عدد الأقواس { } غير متساوي");
+
+    // فحص أوامر شائعة
+    if(code.includes("digitalWrite") && !code.includes("pinMode"))
+      errors.push("⚠️ استخدمت digitalWrite بدون تعريف pinMode");
+
+    if(code.includes("delay(") && !code.includes(";"))
+      errors.push("❌ أمر delay يحتاج ; في النهاية");
+
+    const errorBox = document.getElementById("errors");
+    if(errors.length>0){
+      errorBox.innerHTML = errors.join("<br>");
+      errorBox.style.color = "red";
+    } else {
+      errorBox.innerHTML = "✅ الكود صحيح، لا يوجد أخطاء أساسية";
+      errorBox.style.color = "lime";
+    }
   }
 
-  async function uploadCode(){
-    log("⬆️ محاولة رفع الكود عبر WebSerial...");
+  // WebSerial
+  let port, reader;
+  async function openSerial(){
     try {
-      const port = await navigator.serial.requestPort();
+      port = await navigator.serial.requestPort();
       await port.open({ baudRate: 9600 });
-      const writer = port.writable.getWriter();
-      const code = editor.getValue();
-      await writer.write(new TextEncoder().encode(code));
-      log("✅ تم إرسال الكود للمنفذ كسيريال.");
-      writer.releaseLock();
+      log("✅ تم فتح المنفذ","lime");
+      listenToPort();
     } catch(e){
-      log("❌ خطأ: "+e);
+      log("❌ خطأ في فتح المنفذ: "+e,"red");
     }
+  }
+
+  async function listenToPort(){
+    const decoder = new TextDecoderStream();
+    port.readable.pipeTo(decoder.writable);
+    reader = decoder.readable.getReader();
+    while(true){
+      const { value, done } = await reader.read();
+      if(done) break;
+      if(value) log("📥 "+value,"#0ea5e9");
+    }
+  }
+
+  async function sendSerial(){
+    if(!port){ log("⚠️ افتح المنفذ أولاً","orange"); return; }
+    const text = document.getElementById("serialInput").value;
+    const encoder = new TextEncoder();
+    const writer = port.writable.getWriter();
+    await writer.write(encoder.encode(text+"\n"));
+    writer.releaseLock();
+    log("➡️ أُرسل: "+text,"lime");
   }
 
   function saveCode(){
@@ -131,7 +134,12 @@ async function closeSerial(){
     a.download = "sketch.ino";
     a.click();
     URL.revokeObjectURL(a.href);
-    log("💾 تم حفظ الكود كملف sketch.ino");
+    log("💾 تم حفظ الكود كملف sketch.ino","lime");
+  }
+
+  // زر Upload (placeholder للتكامل مع Agent/WebUSB)
+  function uploadCode(){
+    log("⬆️ رفع الكود يتطلب Arduino Create Agent أو WebUSB Bootloader","orange");
   }
 </script>
 </body>
