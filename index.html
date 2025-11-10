@@ -2,125 +2,306 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>🔥 لعبة حرب بسيطة</title>
+  <title>🚗 محاكاة قيادة واقعية (Top‑down)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { margin:0; background:#111; overflow:hidden; }
-    canvas { display:block; margin:0 auto; background:#222; }
+    :root {
+      --bg: #0f172a; --road: #1f2937; --lane: #e5e7eb; --text: #e5e7eb;
+      --accent: #0ea5e9; --grass1: #0b5d2a; --grass2: #0a4a22;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"Cairo",system-ui; background:var(--bg); color:var(--text); }
+    header { padding:8px 16px; background:var(--accent); color:#071621; font-weight:800; }
+    .wrap { display:grid; grid-template-columns: 1fr 320px; min-height: calc(100vh - 46px); }
+    canvas { width:100%; height: calc(100vh - 46px); display:block; background:linear-gradient(180deg,var(--grass1),var(--grass2)); }
+    aside { background:#0a1220; border-left:1px solid #1f2937; padding:12px; }
+    .stat { background:#0b1220; border:1px solid #1f2937; border-radius:10px; padding:10px; margin-bottom:10px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+    .btn { padding:8px 10px; border-radius:8px; border:none; font-weight:700; cursor:pointer; }
+    .btn-primary { background:var(--accent); color:#071621 }
+    .input { width:100%; padding:8px; border-radius:8px; border:1px solid #1f2937; background:#0b1220; color:var(--text) }
+    .hint { font-size:12px; opacity:0.8 }
   </style>
 </head>
 <body>
-<canvas id="game" width="800" height="500"></canvas>
+<header>🚗 محاكاة قيادة واقعية (Top‑down) — أسهم: يمين/يسار للتوجيه • ↑ للتسارع • ↓ للفرامل • مسافة لفرامل يد</header>
+
+<div class="wrap">
+  <canvas id="cv"></canvas>
+  <aside>
+    <div class="stat">
+      <div><strong>السرعة:</strong> <span id="spd">0</span> كم/س</div>
+      <div><strong>التروس:</strong> <span id="gear">N</span></div>
+      <div><strong>دورات المحرك:</strong> <span id="rpm">0</span> rpm</div>
+      <div><strong>انزلاق:</strong> <span id="slip">0</span></div>
+    </div>
+    <div class="stat">
+      <div class="row">
+        <button class="btn btn-primary" id="resetBtn">إعادة ضبط</button>
+        <button class="btn" id="pauseBtn">إيقاف/تشغيل</button>
+      </div>
+    </div>
+    <div class="stat">
+      <div><strong>إعدادات السيارة</strong></div>
+      <label>قوة المحرك (kN)
+        <input id="eng" type="range" min="2" max="10" step="0.5" value="6" class="input">
+      </label>
+      <label>معامل جر الإطارات
+        <input id="mu" type="range" min="0.6" max="1.4" step="0.05" value="1.0" class="input">
+      </label>
+      <label>فرامل يد (قوة)
+        <input id="ebr" type="range" min="0.5" max="2.0" step="0.1" value="1.0" class="input">
+      </label>
+      <div class="hint">ارفع معامل الجر للقبضة القوية، قلله لتنزلق أكتر.</div>
+    </div>
+    <div class="stat">
+      <strong>المفاتيح:</strong>
+      <div>↑ تسارع • ↓ فرامل • ←/→ توجيه • Space فرامل يد • P إيقاف مؤقت</div>
+    </div>
+  </aside>
+</div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let W,H; function resize(){ W=cv.width=cv.clientWidth; H=cv.height=cv.clientHeight; } window.addEventListener("resize",resize); resize();
 
-let player = { x: 50, y: 220, w: 40, h: 40, color: "cyan" };
-let bullets = [];
-let enemies = [];
-let score = 0;
-let gameOver = false;
+const ui = {
+  spd: document.getElementById("spd"),
+  gear: document.getElementById("gear"),
+  rpm: document.getElementById("rpm"),
+  slip: document.getElementById("slip"),
+  eng: document.getElementById("eng"),
+  mu:  document.getElementById("mu"),
+  ebr: document.getElementById("ebr")
+};
 
-// رسم اللاعب
-function drawPlayer() {
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, player.w, player.h);
-}
-
-// رسم الرصاص
-function drawBullets() {
-  ctx.fillStyle = "yellow";
-  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
-}
-
-// رسم الأعداء
-function drawEnemies() {
-  ctx.fillStyle = "red";
-  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
-}
-
-// تحديث الرصاص
-function updateBullets() {
-  bullets.forEach((b,i) => {
-    b.x += 8;
-    if (b.x > canvas.width) bullets.splice(i,1);
-  });
-}
-
-// تحديث الأعداء
-function updateEnemies() {
-  enemies.forEach((e,i) => {
-    e.x -= 3;
-    if (e.x < 0) enemies.splice(i,1);
-
-    // تصادم مع اللاعب
-    if (e.x < player.x+player.w && e.x+e.w > player.x &&
-        e.y < player.y+player.h && e.y+e.h > player.y) {
-      gameOver = true;
-    }
-  });
-}
-
-// تصادم الرصاص مع الأعداء
-function checkCollisions() {
-  bullets.forEach((b,bi) => {
-    enemies.forEach((e,ei) => {
-      if (b.x < e.x+e.w && b.x+b.w > e.x &&
-          b.y < e.y+e.h && b.y+b.h > e.y) {
-        bullets.splice(bi,1);
-        enemies.splice(ei,1);
-        score += 10;
-      }
-    });
-  });
-}
-
-// رسم النص
-function drawText() {
-  ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
-  ctx.fillText("النقاط: " + score, 10, 20);
-  if (gameOver) {
-    ctx.fillStyle = "red";
-    ctx.font = "40px Arial";
-    ctx.fillText("انتهت اللعبة!", canvas.width/2-100, canvas.height/2);
-  }
-}
-
-// حلقة اللعبة
-function loop() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if (!gameOver) {
-    drawPlayer();
-    drawBullets();
-    drawEnemies();
-    updateBullets();
-    updateEnemies();
-    checkCollisions();
-    drawText();
-  } else {
-    drawText();
-  }
-  requestAnimationFrame(loop);
-}
-loop();
-
-// تحكم اللاعب
-window.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") player.y -= 20;
-  if (e.key === "ArrowDown") player.y += 20;
-  if (e.key === " ") {
-    bullets.push({ x: player.x+player.w, y: player.y+player.h/2-5, w: 10, h: 5 });
-  }
+const keys = { up:false, down:false, left:false, right:false, ebrake:false };
+window.addEventListener("keydown", e=>{
+  if(e.key==="ArrowUp") keys.up=true;
+  if(e.key==="ArrowDown") keys.down=true;
+  if(e.key==="ArrowLeft") keys.left=true;
+  if(e.key==="ArrowRight") keys.right=true;
+  if(e.code==="Space") keys.ebrake=true;
+  if(e.key.toLowerCase()==="p") paused=!paused;
+});
+window.addEventListener("keyup", e=>{
+  if(e.key==="ArrowUp") keys.up=false;
+  if(e.key==="ArrowDown") keys.down=false;
+  if(e.key==="ArrowLeft") keys.left=false;
+  if(e.key==="ArrowRight") keys.right=false;
+  if(e.code==="Space") keys.ebrake=false;
 });
 
-// توليد أعداء
-setInterval(() => {
-  if (!gameOver) {
-    let y = Math.random() * (canvas.height-40);
-    enemies.push({ x: canvas.width-40, y, w: 40, h: 40 });
+// Track: multilane road
+function drawWorld() {
+  // road body
+  const rw = Math.min(W*0.6, 800);
+  const rx = (W - rw)/2;
+  ctx.fillStyle = "#1f2937";
+  ctx.fillRect(rx, 0, rw, H);
+  // shoulder
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(rx-20,0,20,H);
+  ctx.fillRect(rx+rw,0,20,H);
+  // lanes
+  ctx.strokeStyle = "#e5e7eb"; ctx.lineWidth = 4; ctx.setLineDash([24,24]);
+  for(let i=1;i<4;i++){
+    const lx = rx + (rw/4)*i;
+    ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,H); ctx.stroke();
   }
-}, 1500);
+  ctx.setLineDash([]);
+}
+
+// Car model (bicycle model with tire friction)
+const car = {
+  x: W*0.5, y: H*0.75, // position
+  vx:0, vy:0, // velocity in world
+  heading: -Math.PI/2, // pointing up
+  yawRate: 0,
+  mass: 1200, // kg
+  length: 2.6, // m (wheelbase)
+  width: 1.8,
+  // tire params
+  mu: 1.0,  // grip (updated by UI)
+  Cf: 60000, // front cornering stiffness
+  Cr: 60000, // rear cornering stiffness
+  // engine/brake
+  engineForce: 6000, // N (updated by UI)
+  brakeForce: 8000,  // N
+  ebrakeFactor: 1.0, // rear brake multiplier (updated)
+  // steering
+  steer: 0,
+  maxSteer: 0.5, // rad ~ 28.6 deg
+  steerRate: 1.8, // rad/s
+};
+
+let paused = false;
+
+// Helpers
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+// Physics update
+function step(dt) {
+  // Inputs
+  const steerTarget =
+    (keys.left? -car.maxSteer:0) + (keys.right? car.maxSteer:0);
+  car.steer += clamp(steerTarget - car.steer, -car.steerRate*dt, car.steerRate*dt);
+
+  const throttle = keys.up ? 1 : 0;
+  const brake    = keys.down ? 1 : 0;
+  const ebr      = keys.ebrake ? car.ebrakeFactor : 0;
+
+  // Transform velocities to car local frame
+  const cosH = Math.cos(car.heading), sinH = Math.sin(car.heading);
+  const ux =  cosH*car.vx + sinH*car.vy; // longitudinal
+  const uy = -sinH*car.vx + cosH*car.vy; // lateral
+
+  // Longitudinal dynamics
+  const F_engine = throttle * car.engineForce;
+  const F_brake  = brake * car.brakeForce;
+  const F_ebrake = ebr * car.brakeForce * 0.6; // rear bias
+  const sign = Math.sign(ux);
+  const F_drag  = 0.5 * 1.2 * 0.3 * ux*ux * sign; // air drag ~rho*Cd*A*v^2
+  const F_roll  = 50 * sign; // rolling resistance
+  const Fx = F_engine - F_brake*sign - F_drag - F_roll - F_ebrake*sign;
+
+  // Lateral tire forces (pacejka-lite: linear up to grip limit)
+  const a = car.length; // wheelbase
+  const beta = Math.atan2(uy, Math.max(0.1, Math.abs(ux))) // slip angle approx
+  const yaw = car.yawRate;
+
+  const v = Math.hypot(ux, uy);
+  const frontSlip = beta + yaw*a/2 / Math.max(v,0.1) - car.steer;
+  const rearSlip  = beta - yaw*a/2 / Math.max(v,0.1);
+
+  const Fyf_lin = -car.Cf * frontSlip;
+  const Fyr_lin = -car.Cr * rearSlip;
+
+  const Fmax = car.mu * car.mass * 9.81 / 2; // per axle
+  const Fyf = clamp(Fyf_lin, -Fmax, Fmax);
+  const Fyr = clamp(Fyr_lin, -Fmax, Fmax);
+
+  // Reduce rear grip on ebrake to induce oversteer
+  const Fyr_eff = Fyr * (1 - 0.5*ebr);
+
+  // Acceleration in local frame
+  const ax = Fx / car.mass + uy*yaw;
+  const ay = (Fyf + Fyr_eff) / car.mass - ux*yaw;
+
+  // Yaw dynamics (simplified)
+  const Iz = 0.5*car.mass* (car.length*car.length/12); // rough
+  const Mz = (Fyf * (a/2)) - (Fyr_eff * (a/2));
+  const yawAcc = Mz / Math.max(Iz,1);
+
+  // Integrate local velocities
+  const ux2 = ux + ax*dt;
+  const uy2 = uy + ay*dt;
+
+  // Back to world frame
+  car.vx =  cosH*ux2 - sinH*uy2;
+  car.vy =  sinH*ux2 + cosH*uy2;
+
+  // Integrate position and yaw
+  car.x += car.vx*dt;
+  car.y += car.vy*dt;
+  car.yawRate += yawAcc*dt;
+  car.heading += car.yawRate*dt;
+
+  // Road limits (keep inside road)
+  const rw = Math.min(W*0.6, 800);
+  const rx = (W - rw)/2;
+  const laneL = rx+10, laneR = rx+rw-10;
+  car.x = clamp(car.x, laneL, laneR);
+
+  // UI updates
+  const speedMS = Math.hypot(car.vx, car.vy);
+  ui.spd.textContent = Math.round(speedMS*3.6);
+  // Simple gear display based on speed
+  const gear = speedMS<2 ? "N" : speedMS<10 ? "1" : speedMS<20 ? "2" : speedMS<35 ? "3" : speedMS<55 ? "4" : "5";
+  ui.gear.textContent = gear;
+  ui.rpm.textContent  = Math.round(1000 + speedMS*120);
+  ui.slip.textContent = (Math.abs(frontSlip)+Math.abs(rearSlip)).toFixed(2);
+}
+
+// Car drawing with skidmarks
+const skidmarks = [];
+function drawCar() {
+  // Skidmarks intensity from slip
+  const speed = Math.hypot(car.vx, car.vy);
+  const slipIntensity = clamp(speed>2 ? Math.min(1, parseFloat(ui.slip.textContent)/1.2) : 0, 0, 1);
+  const lw = 6*slipIntensity;
+  if (lw>0.2){
+    skidmarks.push({ x:car.x, y:car.y, heading:car.heading, w:lw, life: 1.0 });
+    if (skidmarks.length>800) skidmarks.shift();
+  }
+  // Draw skidmarks fading
+  for(let i=0;i<skidmarks.length;i++){
+    const s = skidmarks[i];
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(s.heading);
+    ctx.globalAlpha = s.life*0.5;
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(-car.width*10, 8, car.width*20, s.w);
+    ctx.fillRect(-car.width*10,-8, car.width*20, s.w);
+    ctx.restore();
+    s.life = Math.max(0, s.life - 0.01);
+  }
+
+  // Car body
+  ctx.save();
+  ctx.translate(car.x, car.y);
+  ctx.rotate(car.heading);
+  const wpx = car.width*30, lpx = car.length*40;
+  // body
+  const grd = ctx.createLinearGradient(-lpx/2,0,lpx/2,0);
+  grd.addColorStop(0,"#0ea5e9"); grd.addColorStop(1,"#22c55e");
+  ctx.fillStyle = grd;
+  ctx.fillRect(-lpx/2, -wpx/2, lpx, wpx);
+  // windows
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  ctx.fillRect(-lpx*0.1, -wpx*0.35, lpx*0.4, wpx*0.7);
+  // wheels
+  ctx.fillStyle = "#0f0f0f";
+  const wh = wpx*0.18, ww = lpx*0.16;
+  ctx.fillRect(-lpx/2+10, -wpx/2-6, ww, wh);
+  ctx.fillRect(-lpx/2+10,  wpx/2- wh+6, ww, wh);
+  ctx.fillRect( lpx/2-ww-10, -wpx/2-6, ww, wh);
+  ctx.fillRect( lpx/2-ww-10,  wpx/2- wh+6, ww, wh);
+  // front wheel steer indicator
+  ctx.fillStyle = "#e5e7eb";
+  ctx.fillRect(lpx/2-ww-10, -wpx/2-12, 8*Math.sign(car.steer), 4);
+  ctx.restore();
+}
+
+// Main loop
+let last = performance.now();
+function loop(ts){
+  const dt = Math.min(0.033, (ts - last)/1000); last = ts;
+  ctx.clearRect(0,0,W,H);
+  drawWorld();
+  if (!paused) step(dt);
+  drawCar();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// UI controls
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  car.x = W*0.5; car.y = H*0.75;
+  car.vx=0; car.vy=0; car.heading=-Math.PI/2; car.yawRate=0; car.steer=0;
+  skidmarks.length=0;
+});
+document.getElementById("pauseBtn").addEventListener("click", ()=> paused=!paused);
+ui.eng.addEventListener("input", ()=> car.engineForce = parseFloat(ui.eng.value)*1000);
+ui.mu.addEventListener("input", ()=> car.mu = parseFloat(ui.mu.value));
+ui.ebr.addEventListener("input", ()=> car.ebrakeFactor = parseFloat(ui.ebr.value));
+
+// Initial apply
+car.engineForce = parseFloat(ui.eng.value)*1000;
+car.mu = parseFloat(ui.mu.value);
+car.ebrakeFactor = parseFloat(ui.ebr.value);
 </script>
 </body>
 </html>
