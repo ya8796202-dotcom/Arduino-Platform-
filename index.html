@@ -1,147 +1,232 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>🚗 منصّة محاكاة القيادة</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>محول أوامر عربي → كود أردوينو</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --bg: #0f172a; --card: #0b1220; --text: #e5e7eb; --muted:#9ca3af;
-      --primary:#0ea5e9; --accent:#22c55e; --border:#1f2937;
-    }
-    * { box-sizing: border-box }
-    body { margin:0; font-family: "Cairo", system-ui; background: var(--bg); color: var(--text) }
-    header {
-      background: linear-gradient(90deg, #0ea5e9, #22c55e);
-      color:#08101a; padding: 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
-    }
-    header h1 { margin:0; font-size: 22px; font-weight:900 }
-    header .sub { font-size:13px; opacity:.8 }
-    .container { max-width: 1100px; margin: 20px auto; padding: 0 16px }
-    .grid { display:grid; grid-template-columns: 1fr 360px; gap: 16px }
-    @media (max-width: 960px) { .grid { grid-template-columns: 1fr } }
-    .card {
-      background: var(--card);
-      border:1px solid var(--border); border-radius: 14px; overflow:hidden;
-      box-shadow: 0 8px 30px rgba(0,0,0,.35);
-    }
-    .card header { background: transparent; color: var(--text); padding: 12px 16px; border-bottom:1px solid var(--border) }
-    .card h2 { margin:0; font-size: 18px; color: var(--primary) }
-    .card .body { padding: 14px }
-    .btn {
-      display:inline-block; padding:10px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:800;
-      background: var(--primary); color:#08101a; text-decoration:none; transition: transform .08s ease;
-    }
-    .btn:hover { transform: translateY(-1px) }
-    .btn.accent { background: var(--accent) }
-    .list { display:grid; gap:10px }
-    .item { padding:10px; border:1px solid var(--border); border-radius:12px; background:#091021 }
-    .item .title { font-weight:800; color: var(--primary) }
-    .item .desc { font-size:13px; color: var(--muted); margin-top:6px }
-    iframe {
-      width: 100%; height: 70vh; border:0; background:#000;
-    }
-    .note { font-size:12px; color: var(--muted); margin-top:8px }
-    footer { text-align:center; color: var(--muted); padding: 20px 0 }
+    :root { --bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --primary:#0ea5e9; --accent:#22c55e; --border:#1f2937; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:"Cairo",system-ui}
+    header{padding:14px 16px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#08101a;font-weight:900}
+    .container{max-width:1100px;margin:20px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:16px} @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+    .card header{background:transparent;color:var(--text);padding:12px 16px;border-bottom:1px solid var(--border)}
+    .card h2{margin:0;font-size:18px;color:var(--primary)}
+    .card .body{padding:14px}
+    textarea,.input{width:100%;background:#091021;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px}
+    textarea{min-height:120px;resize:vertical}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:800;color:#08101a;background:var(--primary)}
+    .btn.accent{background:var(--accent)}
+    .btn.muted{background:#1f2937;color:#cbd5e1}
+    pre{background:#0a1324;border:1px solid #1f2937;border-radius:12px;padding:12px;overflow:auto;max-height:50vh}
+    .example{padding:10px;border:1px solid var(--border);border-radius:12px;background:#091021;margin-bottom:8px}
+    .title{font-weight:800;color:var(--primary)}
+    .desc{font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>🚗 منصّة محاكاة القيادة الجاهزة</h1>
-      <div class="sub">اختر لعبتك وابدأ القيادة فورًا — روابط موثوقة تعمل في المتصفح</div>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap">
-      <a class="btn" href="https://ar.crazygames.com/game/realdrive-feel-the-real-drive" target="_blank" rel="noopener">فتح RealDrive</a>
-      <a class="btn accent" href="https://yandex.com/games/ar/app/258100" target="_blank" rel="noopener">فتح Ultimate Car Driving</a>
-      <a class="btn" href="https://www.gamesy.com/ar/game/real-driving-simulator-ar/" target="_blank" rel="noopener">فتح Real Driving Simulator</a>
-    </div>
-  </header>
+  <header>🔧 محول الأوامر بالعربي إلى كود أردوينو — نسخة MVP</header>
 
   <div class="container grid">
     <div class="card">
-      <header>
-        <h2>تشغيل مباشر داخل الموقع</h2>
-      </header>
+      <header><h2>اكتب أمرك بالعربي</h2></header>
       <div class="body">
-        <iframe
-          title="RealDrive Embed"
-          src="https://ar.crazygames.com/game/realdrive-feel-the-real-drive"
-          allow="gamepad *; fullscreen; autoplay"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups"
-        ></iframe>
-        <div class="note">لو الإطار المضمّن ما اشتغل، استخدم الأزرار بالأعلى لفتح اللعبة في تبويب جديد.</div>
+        <textarea id="arabic" placeholder="مثال: شغل الليد في البن 13 لمدة 2 ثانية وبعدين اقفله، واطبع على السيريال: تم التشغيل"></textarea>
+        <div class="row">
+          <button class="btn" id="convert">تحويل إلى كود</button>
+          <button class="btn accent" id="copy">نسخ الكود</button>
+          <button class="btn muted" id="download">تحميل .ino</button>
+        </div>
+        <div class="row">
+          <input id="proj" class="input" placeholder="اسم الملف (بدون امتداد) — مثال: my_led_demo" />
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <header>
-        <h2>البدائل والميزات</h2>
-      </header>
-      <div class="body">
-        <div class="list">
-          <div class="item">
-            <div class="title">RealDrive — Feel the Real Drive</div>
-            <div class="desc">محاكاة قيادة ثلاثية الأبعاد بعالم مفتوح وفيزياء واقعية تعمل عبر WebGL داخل المتصفح.</div>
-            <div style="margin-top:8px">
-              <a class="btn" href="https://ar.crazygames.com/game/realdrive-feel-the-real-drive" target="_blank" rel="noopener">تشغيل</a>
-            </div>
-          </div>
-
-          <div class="item">
-            <div class="title">Ultimate Car Driving Simulator</div>
-            <div class="desc">تركيز على واقعية الفيزياء والتخصيص داخل عالم مفتوح—يدعم اللعب داخل المتصفح.</div>
-            <div style="margin-top:8px">
-              <a class="btn accent" href="https://yandex.com/games/ar/app/258100" target="_blank" rel="noopener">تشغيل</a>
-            </div>
-          </div>
-
-          <div class="item">
-            <div class="title">Real Driving Simulator</div>
-            <div class="desc">طرق ومدن ومسارات متنوعة مع إحساس واقعي خلف المقود وتجربة سباق ممتعة.</div>
-            <div style="margin-top:8px">
-              <a class="btn" href="https://www.gamesy.com/ar/game/real-driving-simulator-ar/" target="_blank" rel="noopener">تشغيل</a>
-            </div>
-          </div>
+      <header><h2>أمثلة جاهزة</h2></header>
+      <div class="body" id="examples">
+        <div class="example">
+          <div class="title">LED تشغيل/إطفاء + سيريال</div>
+          <div class="desc">يشغل الليد في 13 لمدة 2 ثانية ثم يطفئه ويطبع رسالة</div>
+          <button class="btn" onclick="loadExample('شغل الليد في البن 13 لمدة 2 ثانية وبعدين اقفله، واطبع على السيريال: تم التشغيل')">تحميل المثال</button>
         </div>
-
-        <div class="note" style="margin-top:10px">
-          تلميح: بعض الألعاب تطلب فتحها في نافذة مستقلة أو السماح بـ Gamepad. لو واجهت مشكلة، افتحها من الأزرار بالأعلى.
+        <div class="example">
+          <div class="title">PWM سيرفو</div>
+          <div class="desc">تعيين زاوية السيرفو في البن 9 إلى 90 درجة</div>
+          <button class="btn" onclick="loadExample('حرك السيرفو في البن 9 إلى زاوية 90 درجة، ثم إلى 0 درجة بعد ثانية')">تحميل المثال</button>
+        </div>
+        <div class="example">
+          <div class="title">حساس تناظري</div>
+          <div class="desc">قراءة A0 وطباعة القيمة كل نص ثانية</div>
+          <button class="btn" onclick="loadExample('اقرأ الحساس في A0 واطبع القيمة على السيريال كل نصف ثانية')">تحميل المثال</button>
+        </div>
+        <div class="example">
+          <div class="title">PWM LED</div>
+          <div class="desc">تحكم في سطوع LED في البن 5 إلى 128</div>
+          <button class="btn" onclick="loadExample('اضبط سطوع الليد في البن 5 إلى 128 باستخدام PWM')">تحميل المثال</button>
         </div>
       </div>
     </div>
   </div>
 
-  <footer>
-    جاهز للدمج في موقعك — غيّر الألوان من :root واحفظ الصفحة باسم index.html
-  </footer>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <title>🚗 ألعاب محاكاة القيادة</title>
-  <style>
-    body { margin:0; font-family:"Cairo",sans-serif; background:#0f172a; color:#e5e7eb; }
-    .container { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; gap:20px; }
-    .btn {
-      padding:14px 22px; border:none; border-radius:12px; font-weight:800; cursor:pointer;
-      background:linear-gradient(90deg,#0ea5e9,#22c55e); color:#08101a; font-size:18px;
-      text-decoration:none; transition:transform .1s ease;
-    }
-    .btn:hover { transform:scale(1.05); }
-    h1 { color:#0ea5e9; font-size:28px; margin-bottom:10px; }
-    p { opacity:.8; }
-  </style>
-</head>
-<body>
   <div class="container">
-    <h1>🚗 منصّة محاكاة القيادة</h1>
-    <p>اختر لعبتك المفضلة وابدأ القيادة في تبويب جديد</p>
-    <a class="btn" href="https://ar.crazygames.com/game/realdrive-feel-the-real-drive" target="_blank">تشغيل RealDrive</a>
-    <a class="btn" href="https://yandex.com/games/app/258100" target="_blank">تشغيل Ultimate Car Driving</a>
-    <a class="btn" href="https://www.gamesy.com/ar/game/real-driving-simulator-ar/" target="_blank">تشغيل Real Driving Simulator</a>
+    <div class="card">
+      <header><h2>الكود الناتج</h2></header>
+      <div class="body">
+        <pre id="code">// الكود سيظهر هنا بعد التحويل</pre>
+      </div>
+    </div>
   </div>
+
+  <script>
+    // Utilities
+    const arabicEl = document.getElementById('arabic');
+    const codeEl = document.getElementById('code');
+    const projEl = document.getElementById('proj');
+
+    function loadExample(text){ arabicEl.value = text; }
+
+    function normalize(s){
+      return s.toLowerCase()
+        .replace(/[ء-ي]/g, c => c) // keep Arabic
+        .replace(/[^\w\u0600-\u06FF\s]/g, ' ') // remove symbols
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Rule-based intent extraction
+    function parseIntent(text){
+      const s = normalize(text);
+      const intents = [];
+
+      // LED on/off with pin and duration
+      const pinMatch = s.match(/البن\s*(\d+)/) || s.match(/pin\s*(\d+)/);
+      const pin = pinMatch ? parseInt(pinMatch[1]) : null;
+
+      if (s.includes('شغل') && (s.includes('ليد') || s.includes('الليد'))) {
+        intents.push({type:'led', action:'on', pin: pin || 13});
+      }
+      if ((s.includes('اقفل')||s.includes('اطفي')||s.includes('طفّي')) && (s.includes('ليد')||s.includes('الليد'))) {
+        intents.push({type:'led', action:'off', pin: pin || 13});
+      }
+
+      // delay
+      const secMatch = s.match(/(?:ثانية|ثواني|ثانيه)\s*(\d+)|مدة\s*(\d+)\s*ثانية/);
+      const msMatch = s.match(/مللي\s*ثانية\s*(\d+)/);
+      if (secMatch) intents.push({type:'delay', ms: parseInt(secMatch[1] || secMatch[2]) * 1000});
+      if (msMatch) intents.push({type:'delay', ms: parseInt(msMatch[1])});
+
+      // serial print
+      const serialMatch = text.match(/السيريال[:：]\s*(.+)$/i) || text.match(/اطبع\s*[:：]\s*(.+)$/i);
+      if (serialMatch) intents.push({type:'serial', msg: serialMatch[1].trim()});
+
+      // analog read
+      const aPinMatch = s.match(/a(\d+)/);
+      if (s.includes('اقرأ') && (s.includes('حساس') || s.includes('analog'))) {
+        intents.push({type:'analog', pin: aPinMatch ? ('A' + aPinMatch[1]) : 'A0', interval: (secMatch? parseInt(secMatch[1]||secMatch[2])*1000 : 500)});
+      }
+
+      // servo
+      const servoPinMatch = s.match(/البن\s*(\d+)/);
+      const servoAngleMatch = s.match(/زاوية\s*(\d+)/) || s.match(/angle\s*(\d+)/);
+      if (s.includes('سيرفو') || s.includes('servo')) {
+        intents.push({type:'servo', pin: servoPinMatch ? parseInt(servoPinMatch[1]) : 9, angle: servoAngleMatch ? parseInt(servoAngleMatch[1]) : 90});
+      }
+
+      // pwm brightness
+      const pwmMatchVal = s.match(/(\d+)\s*(?:pwm|سطوع|قيمة)/) || s.match(/إلى\s*(\d+)\s*(?:pwm|سطوع)/);
+      if (s.includes('pwm') || s.includes('سطوع')) {
+        intents.push({type:'pwm', pin: pin || 5, value: pwmMatchVal ? parseInt(pwmMatchVal[1]) : 128});
+      }
+
+      // steer minimal commands
+      return intents;
+    }
+
+    function generateCode(intents){
+      // headers
+      let includes = new Set();
+      let setup = [];
+      let loop = [];
+
+      function ensurePinMode(pin, mode){
+        const line = `pinMode(${pin}, ${mode});`;
+        if (!setup.includes(line)) setup.push(line);
+      }
+
+      intents.forEach(intent=>{
+        if (intent.type==='led'){
+          ensurePinMode(intent.pin, 'OUTPUT');
+          loop.push(`digitalWrite(${intent.pin}, ${intent.action==='on'?'HIGH':'LOW'});`);
+        }
+        if (intent.type==='delay'){
+          loop.push(`delay(${intent.ms});`);
+        }
+        if (intent.type==='serial'){
+          includes.add('serial');
+          loop.push(`Serial.println("${intent.msg.replace(/"/g,'\\"')}");`);
+        }
+        if (intent.type==='analog'){
+          includes.add('serial');
+          loop.push(`int val = analogRead(${intent.pin});`);
+          loop.push(`Serial.print("Analog ${intent.pin}: "); Serial.println(val);`);
+          loop.push(`delay(${intent.interval});`);
+        }
+        if (intent.type==='servo'){
+          includes.add('servo');
+          setup.push(`myServo.attach(${intent.pin});`);
+          loop.push(`myServo.write(${intent.angle});`);
+        }
+        if (intent.type==='pwm'){
+          ensurePinMode(intent.pin, 'OUTPUT');
+          loop.push(`analogWrite(${intent.pin}, ${Math.max(0, Math.min(255, intent.value))});`);
+        }
+      });
+
+      // includes
+      let top = [];
+      if (includes.has('servo')) top.push('#include <Servo.h>\nServo myServo;');
+      if (includes.has('serial')) setup.unshift('Serial.begin(9600);');
+
+      // build sketch
+      return `
+${top.join('\n')}
+
+void setup() {
+  ${setup.join('\n  ') || '// لا إعدادات'}
+}
+
+void loop() {
+  ${loop.join('\n  ') || '// لا أوامر — أضف تعليمات بالعربي ثم اضغط تحويل'}
+}
+`.trim();
+    }
+
+    document.getElementById('convert').addEventListener('click', ()=>{
+      const text = arabicEl.value.trim();
+      if(!text){ codeEl.textContent = '// اكتب أمرًا بالعربي ثم اضغط تحويل'; return; }
+      const intents = parseIntent(text);
+      const code = generateCode(intents);
+      codeEl.textContent = code;
+    });
+
+    document.getElementById('copy').addEventListener('click', ()=>{
+      const code = codeEl.textContent;
+      navigator.clipboard.writeText(code).then(()=> alert('تم نسخ الكود'));
+    });
+
+    document.getElementById('download').addEventListener('click', ()=>{
+      const name = (projEl.value.trim() || 'arduino_auto').replace(/[^a-zA-Z0-9_-]/g,'_');
+      const blob = new Blob([codeEl.textContent], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name + '.ino';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
 </body>
 </html>
