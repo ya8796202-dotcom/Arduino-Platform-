@@ -785,3 +785,72 @@ render(data);
 </script>
 </body>
 </html>
+<div id="bot-tips">
+  <div class="bot-icon">🤖</div>
+  <div class="bot-message animated" id="tip-box">
+    مرحبًا! جرب توصل LED بمقاومة 220Ω لحمايته.
+  </div>
+  <button onclick="newTip()">نصيحة جديدة</button>
+</div>
+
+<style>
+#bot-tips {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  font-family: 'Cairo', sans-serif;
+  animation: fadeInUp 1s ease;
+}
+.bot-icon {
+  font-size: 24px;
+}
+.bot-message {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #333;
+  transition: transform 0.3s ease;
+}
+button {
+  background: #0078d7;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:hover {
+  background: #005a9e;
+}
+
+/* أنيميشن الدخول */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* أنيميشن البونس */
+.bounce {
+  transform: translateY(-5px);
+}
+</style>
+
+<script>
+const tips = [
+  "استخدم مقاومة مع LED لتجنب تلفه.",
+  "جرب توصل حساس حرارة مع Arduino لقياس الجو.",
+  "اكتب الكود بخطوات صغيرة واختبر كل جزء.",
+  "استخدم Breadboard للتجارب قبل اللحام النهائي."
+];
+function newTip() {
+  const box = document.getElementById("tip-box");
+  box.innerText = tips[Math.floor(Math.random() * tips.length)];
+  
+  // حركة البونس
+  box.classList.add("bounce");
+  setTimeout(() => box.classList.remove("bounce"), 300);
+}
+</script>
