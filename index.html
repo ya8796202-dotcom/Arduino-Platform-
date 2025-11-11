@@ -960,3 +960,36 @@ render(data);
   </script>
 </body>
 </html>
+
+
+<!-- زرار إظهار/إخفاء البوت -->
+<button id="toggle-bot">🤖 إظهار/إخفاء البوت</button>
+
+<script>
+document.getElementById("toggle-bot").addEventListener("click", () => {
+  const bot = document.getElementById("bot-widget");
+  if (bot.style.display === "none") {
+    bot.style.display = "block";
+  } else {
+    bot.style.display = "none";
+  }
+});
+</script>
+
+<style>
+#toggle-bot {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#toggle-bot:hover {
+  background: #e68900;
+}
+</style>
