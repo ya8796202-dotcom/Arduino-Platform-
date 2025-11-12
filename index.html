@@ -995,3 +995,14 @@ document.getElementById("toggle-bot").addEventListener("click", () => {
   background: #e68900;
 }
 </style>
+
+
+
+
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker Registered"));
+  }
+</script>
