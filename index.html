@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js")
-      .then(() => console.log("Service Worker Registered"));
-  }
-</script>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2196f3">
   <meta name="google-site-verification" content="JUyevI_fBfJQexXFsG9KVciVHKUPSSuCpFH0rmPlycc" />
   <link rel="stylesheet" href="style.css">
   <meta charset="UTF-8" />
@@ -970,34 +962,26 @@ render(data);
 </html>
 
 
-<!-- زرار إظهار/إخفاء البوت -->
-<button id="toggle-bot">🤖 إظهار/إخفاء البوت</button>
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arduino Platform</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2196f3">
+</head>
+<body>
+  <h1>منصة الأردوينو</h1>
+  <p>تجربة PWA على أندرويد</p>
 
-<script>
-document.getElementById("toggle-bot").addEventListener("click", () => {
-  const bot = document.getElementById("bot-widget");
-  if (bot.style.display === "none") {
-    bot.style.display = "block";
-  } else {
-    bot.style.display = "none";
-  }
-});
-</script>
-
-<style>
-#toggle-bot {
-  position: fixed;
-  bottom: 20px;
-  right: 60px;
-  background: #ff9800;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-#toggle-bot:hover {
-  background: #e68900;
-}
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+        .then(() => console.log("✅ Service Worker Registered"))
+        .catch(err => console.error("❌ Service Worker registration failed:", err));
+    }
+  </script>
+</body>
+</html>
 
