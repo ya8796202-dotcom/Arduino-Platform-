@@ -83,20 +83,44 @@
   </div>
 </section>
 
-<!-- قسم البداية اللي الزرار بينزل له -->
-<section id="start" style="padding:100px 20px; background:#f9f9f9;">
+<!-- قسم البداية -->
+<section id="start" class="full-section">
   <h2>🚀 البداية</h2>
   <p>هنا يبدأ المحتوى الأساسي للمنصة: الأكواد، التجارب، وكل الشرح العملي.</p>
 </section>
 
 <!-- قسم الدليل السريع -->
-<section id="docs" style="padding:100px 20px; background:#fff;">
+<section id="docs" class="full-section alt">
   <h2>📖 الدليل السريع</h2>
   <p>هنا تلاقي خطوات سريعة تساعدك تبدأ مع الأردوينو.</p>
 </section>
 
 <style>
-  /* نفس التنسيقات السابقة للفيديو والـ Overlay */
+  /* قسم يملأ الشاشة بالكامل */
+  .full-section {
+    min-height: 100vh; /* ارتفاع الشاشة بالكامل */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background: #f9f9f9;
+    text-align: center;
+  }
+  .full-section.alt {
+    background: #fff;
+  }
+  .full-section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  .full-section p {
+    font-size: 1.2rem;
+    max-width: 700px;
+    line-height: 1.6;
+  }
+
+  /* زرار */
   .btn-primary, .btn-secondary{
     text-decoration: none;
     padding: .75rem 1.25rem;
@@ -118,7 +142,13 @@
     background: rgba(255,255,255,.25);
     transform: translateY(-2px);
   }
+
+  /* Smooth Scroll */
+  html {
+    scroll-behavior: smooth;
+  }
 </style>
+
 
 
 
