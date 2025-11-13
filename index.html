@@ -57,6 +57,129 @@
   </style>
 </head>
 <body>
+
+
+  <!-- قسم الفيديو مع Overlay -->
+<section class="hero-intro">
+  <div class="video-wrapper">
+    <iframe
+      src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1&loop=1&playlist=VIDEO_ID&controls=0&rel=0&modestbranding=1"
+      title="Intro Video"
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen
+      loading="lazy">
+    </iframe>
+  </div>
+
+  <!-- طبقة نص وزر فوق الفيديو -->
+  <div class="hero-overlay">
+    <h1 class="hero-title">منصة أردوينو التفاعلية</h1>
+    <p class="hero-subtitle">اكتب الكود، جرّب الحساسات، وشاهد النتيجة فورًا.</p>
+    <div class="hero-actions">
+      <a href="#start" class="btn-primary">ابدأ الآن</a>
+      <a href="#docs" class="btn-secondary">الدليل السريع</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  :root{
+    --overlay-bg: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.25) 100%);
+    --text-color: #ffffff;
+    --accent: #00d1b2; /* عدّل اللون لهوية ياسر */
+  }
+
+  /* حاوية بالنسبة لتناسب العرض */
+  .hero-intro{
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    /* نسبة أبعاد 16:9 عبر تقنية padding-bottom */
+    aspect-ratio: 16 / 9; /* مدعومة حديثًا؛ إن لم تعمل استخدم padding-bottom */
+    background: #000;
+  }
+
+  /* بديل في حال المتصفح لا يدعم aspect-ratio */
+  @supports not (aspect-ratio: 16 / 9){
+    .hero-intro{ padding-bottom: 56.25%; }
+  }
+
+  .video-wrapper{
+    position: absolute;
+    inset: 0;
+  }
+  .video-wrapper iframe{
+    width: 100%;
+    height: 100%;
+  }
+
+  /* طبقة Overlay */
+  .hero-overlay{
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color);
+    background: var(--overlay-bg);
+  }
+
+  .hero-title{
+    font-size: clamp(1.6rem, 2.5vw, 3rem);
+    margin: 0 0 .5rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+  }
+  .hero-subtitle{
+    font-size: clamp(1rem, 1.4vw, 1.3rem);
+    opacity: .9;
+    margin: 0 0 1.25rem;
+  }
+
+  .hero-actions{
+    display: inline-flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn-primary, .btn-secondary{
+    text-decoration: none;
+    padding: .75rem 1.25rem;
+    border-radius: .6rem;
+    transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+    font-weight: 700;
+    display: inline-block;
+  }
+  .btn-primary{
+    background: var(--accent);
+    color: #081b1f;
+    box-shadow: 0 6px 18px rgba(0, 209, 178, .35);
+  }
+  .btn-primary:hover{ transform: translateY(-2px); }
+
+  .btn-secondary{
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.25);
+  }
+  .btn-secondary:hover{
+    background: rgba(255,255,255,.25);
+    transform: translateY(-2px);
+  }
+
+  /* تحسينات للجوال */
+  @media (max-width: 600px){
+    .hero-overlay{ padding: 1.25rem; }
+    .hero-actions{ gap: .6rem; }
+    .btn-primary, .btn-secondary{ padding: .65rem 1rem; }
+  }
+</style>
+
+
+
+  
   <header class="site">
     <div>
       <div class="brand">🔧 مكتبة أكواد أردوينو بالعربي | أمثلة أساسية ومتقدمة (+100)</div>
