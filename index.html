@@ -59,7 +59,7 @@
 <body>
 
 
-  <!-- فيديو تعريفي يملأ الصفحة بالكامل -->
+<!-- فيديو تعريفي يملأ الصفحة بالكامل -->
 <section class="hero-intro">
   <div class="video-wrapper zoom-video">
     <iframe
@@ -72,12 +72,18 @@
     </iframe>
   </div>
 
-  <!-- Overlay نص ترحيبي فوق الفيديو -->
+  <!-- Overlay نص ترحيبي وأزرار فوق الفيديو -->
   <div class="hero-overlay">
     <h1 class="hero-title fade-in">منصة أردوينو التفاعلية</h1>
     <p class="hero-subtitle fade-in">جرّب الأكواد وشاهد النتيجة مباشرة.</p>
     <div class="hero-actions fade-in">
-      <a href="#!" class="btn-primary">ابدأ الآن</a>
+      <!-- زر ابدأ الآن: غيّر الرابط حسب صفحتك الفعلية -->
+      <a href="/playground" class="btn-primary">ابدأ الآن</a>
+      <!-- زر تعلم البرمجة الآن: الرابط الذي زودته -->
+      <a href="https://ya8796202-dotcom.github.io/Abo-Elyosr-Arduino-/" 
+         class="btn-learn" target="_blank" rel="noopener">
+         تعلم البرمجة الآن
+      </a>
     </div>
   </div>
 </section>
@@ -86,27 +92,22 @@
   :root{
     --overlay-bg: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.25) 100%);
     --text-color: #ffffff;
-    --accent: #00d1b2;
+    --accent: #00d1b2; /* لون زر ابدأ الآن */
+    --learn: #ff9800;   /* لون زر تعلم البرمجة الآن */
   }
 
   /* الفيديو يملأ الشاشة بالكامل */
   .hero-intro{
     position: relative;
     width: 100%;
-    height: 100vh; /* ارتفاع الشاشة بالكامل */
+    height: 100vh;
     background: #000;
     overflow: hidden;
   }
+  .video-wrapper{ position: absolute; inset: 0; }
+  .video-wrapper iframe{ width: 100%; height: 100%; }
 
-  .video-wrapper{
-    position: absolute;
-    inset: 0;
-  }
-  .video-wrapper iframe{
-    width: 100%;
-    height: 100%;
-  }
-
+  /* Overlay */
   .hero-overlay{
     position: absolute;
     inset: 0;
@@ -117,7 +118,6 @@
     color: var(--text-color);
     background: var(--overlay-bg);
   }
-
   .hero-title{
     font-size: clamp(1.6rem, 2.5vw, 3rem);
     margin: 0 0 .5rem;
@@ -129,47 +129,50 @@
     margin: 0 0 1.25rem;
   }
 
+  /* أزرار */
   .hero-actions{
     display: inline-flex;
     gap: .75rem;
     flex-wrap: wrap;
     justify-content: center;
   }
-  .btn-primary{
+  .btn-primary, .btn-learn{
     text-decoration: none;
-    padding: .75rem 1.25rem;
+    padding: .85rem 1.5rem;
     border-radius: .6rem;
     font-weight: 700;
+    transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+  }
+  .btn-primary{
     background: var(--accent);
     color: #081b1f;
-    transition: transform .15s ease, background .2s ease;
+    box-shadow: 0 6px 18px rgba(0, 209, 178, .35);
   }
   .btn-primary:hover{ transform: translateY(-2px); }
-
-  /* حركة Fade In للنصوص */
-  .fade-in{
-    opacity: 0;
-    animation: fadeIn 2s ease forwards;
+  .btn-learn{
+    background: var(--learn);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(255, 152, 0, .35);
   }
+  .btn-learn:hover{ transform: translateY(-2px); }
+
+  /* حركات */
+  .fade-in{ opacity: 0; animation: fadeIn 2s ease forwards; }
   .fade-in:nth-child(1){ animation-delay: 0.5s; }
   .fade-in:nth-child(2){ animation-delay: 1s; }
   .fade-in:nth-child(3){ animation-delay: 1.5s; }
+  @keyframes fadeIn{ to{ opacity: 1; } }
 
-  @keyframes fadeIn{
-    to{ opacity: 1; }
-  }
+  .zoom-video{ animation: zoomIn 15s ease-in-out infinite alternate; }
+  @keyframes zoomIn{ from{ transform: scale(1); } to{ transform: scale(1.05); } }
 
-  /* حركة Zoom للفيديو */
-  .zoom-video{
-    animation: zoomIn 15s ease-in-out infinite alternate;
-  }
-  @keyframes zoomIn{
-    from{ transform: scale(1); }
-    to{ transform: scale(1.05); }
+  /* تحسينات للجوال */
+  @media (max-width: 600px){
+    .hero-overlay{ padding: 1.25rem; }
+    .hero-actions{ gap: .6rem; }
+    .btn-primary, .btn-learn{ padding: .75rem 1.25rem; }
   }
 </style>
-
-
 
 
 
