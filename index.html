@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#000000">
   <link rel="manifest" href="manifest.json">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
@@ -1079,6 +1081,13 @@ render(data);
       updateCount();
       btn.addEventListener("click", showTip);
     });
+    <script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js")
+    .then(() => console.log("Service Worker registered"));
+}
+</script>
+
   </script>
 </body>
 </html>
